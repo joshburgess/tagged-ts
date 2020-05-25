@@ -1,6 +1,6 @@
 {
   "name": "tagged-ts",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A tagged unions code generation library for discriminating tastes",
   "files": [
     "lib",
@@ -20,6 +20,7 @@
     "test-via-mocha": "TS_NODE_CACHE=false mocha -r ts-node/register test/*.ts",
     "clean": "rm -rf lib/* es6/*",
     "build": "yarn clean && tsc -p ./tsconfig.build.json && tsc -p ./tsconfig.build-es6.json && yarn docs",
+    "postbuild": "prettier --write \"./{lib,es6}/**/*.ts\"",
     "prepublish": "yarn safety-check && yarn build",
     "docs": "docs-ts"
   },
