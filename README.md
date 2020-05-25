@@ -26,15 +26,17 @@ type Result<E, A> = Failure<E> | Success<A>
 
 without specializing the generic type params upon generation.
 
-The generated utility functions will automatically have the type signatures that you'd want if you were writing them manually.
+The generated utility functions will automatically have roughly the same type signatures that you'd write if you were defining them manually.
 
 This means less boilerplate & less repetition in your codebase.
 
-### 2. Supports nullary data constructors modeled as constants
+### 2. Supports modeling nullary data constructors as constants
 
-Most libraries of this kind represent nullary data constructors, those which take no arguments, as thunks, functions which take no arguments and return the type of the tagged union. This isn't the end of the world, but thunks are used instead of constants only because it's much easier to generate thunks, and it requires less run-time information.
+Most libraries of this kind represent nullary data constructors, those which take no arguments, as thunks, functions which take no arguments and return the type of the tagged union. This isn't the end of the world, but these libraries use thunks instead of constants only because it's much easier to generate thunks, and it requires less run-time information.
 
 However, most libraries offering hand written sum types model nullary constructors as constants, because this is both more convenient and more similar to what you find in languages that feature tagged unions as a native feature, like Haskell, PureScript, Elm, ReasonML/OCaml, F#, etc....
+
+I think using constants is more ideal, and `tagged-ts` allows you to.
 
 ### 3. Configurable
 
@@ -67,7 +69,7 @@ Quick notes on each of the available generation functions:
   - Discriminant key: Whatever string you want to use (Configurable)
   - Nullary constructors mode: `'constant' | 'thunk'` (Configurable)
 
-## How it works
+## How It Works
 
 Fully supporting polymorphic type constructors and correctly propagating the generic type params through all layers of the code generation without losing type information is difficult. In fact, I don't think it's possible to support sum types that take more than a single type param using the conventional techniques employed by other tagged unions libraries.
 
@@ -75,7 +77,7 @@ The trick to making it work is taking a page out of the [`fp-ts`](https://github
 
 In `fp-ts`, the modification of type-level maps is used to facilitate a sort of type system hack that allows TypeScript to model higher kinded types & higher kinded polymorphism. For those familiar with ReasonML/OCaml, this technique is very similar to the approach using "open"/extensible GADTs outlined in the ["Lightweight higher-kinded polymorphism"](https://www.cl.cam.ac.uk/~jdy22/papers/lightweight-higher-kinded-polymorphism.pdf) paper.
 
-In `tagged-ts`, the type-level maps represent a mapping from a unique identifier, a string or symbol, to a type constructor specification, referred to as a `Spec` in the source code. This allows us to correctly plumb generics through all the machinery within the internals of the library. There are 5 type-level maps in total, one for each Kind:
+In `tagged-ts`, the type-level maps represent a mapping from a unique identifier, a string or symbol, to a type constructor specification, referred to as a `Spec` in the source code. This allows us to correctly plumb generics through all the internal machinery of the library. There are 5 type-level maps in total, one for each Kind:
 
 ```ts
 /**
@@ -136,7 +138,7 @@ export type TypeConstructorRegistry =
   | TypeConstructorRegistry4<unknown, unknown, unknown, unknown>
 ```
 
-We use declaration merging to add new type constructor `Spec`s to the appropriate `TypeConstructorRegistry` type-level map.
+We use declaration merging to add new type constructor `Specs` to the appropriate `TypeConstructorRegistry` type-level map.
 
 Here's an example of what constructing the `Spec` for `Maybe<A>` and adding it to `TypeConstructorRegistry1<A>`  would look like:
 
@@ -165,7 +167,7 @@ declare module 'tagged-ts/lib/Registry' {
 }
 ```
 
-Alternatively, instead of writing the `Spec` by hand, we can consruct the `Spec` using the `MkTypeConstructorSpec` type-level utility, which will not allow you to make a mistake. 
+Alternatively, instead of writing the `Spec` by hand, we can consruct the `Spec` using the `MkTypeConstructorSpec` type-level utility, which will not allow you to make a mistake.
 
 ```ts
 import { MkTypeConstructorSpec } from 'tagged-ts/lib/Registry'
@@ -214,7 +216,7 @@ const numMayB = Maybe.Just({ value: 0 })
 // }) => Maybe<number>
 ```
 
-Alternatively, we could use the more configurable `mkTaggedCustom`. Example:
+Instead, we could use the more configurable `mkTaggedCustom`. Example:
 
 ```ts
 import { __, mkTaggedUnionCustom, thunk } from 'tagged-ts'
