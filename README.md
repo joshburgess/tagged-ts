@@ -290,4 +290,4 @@ Like the `fp-ts` ecosystem libraries, this library is using [`doc-ts`](https://g
 
 ## Coming Soon
 
-Tests, further documentation, & more features are coming soon.
+More tests, better test coverage & documentation, and more features are coming soon.
