@@ -1,165 +1,139 @@
 import * as assert from 'assert'
-import { __, mkTaggedUnionRedux } from '../src'
+import { __, mkTaggedUnionCustom, thunk } from '../src'
 import { MkTypeConstructorSpec } from '../src/Registry'
 
-type GET_USERS<A> = {
-  readonly type: 'GET_USERS'
-  readonly meta: A
+type Nope = { readonly __Kind: 'Nope' }
+type Yup<A> = {
+  readonly __Kind: 'Yup'
+  readonly value: A
 }
-type GET_EVENTS<A> = {
-  readonly type: 'GET_EVENTS'
-  readonly meta: A
-}
-type GetResourcesForOrgActions<A> = GET_EVENTS<A> | GET_USERS<A>
+type Perhaps<A> = Yup<A> | Nope
 
-type GetResourcesForOrgActionsSpec<A> = MkTypeConstructorSpec<
-  GetResourcesForOrgActions<A>,
-  'type',
+type PerhapsSpec<A> = MkTypeConstructorSpec<
+  Perhaps<A>,
+  '__Kind',
   {
-    readonly GET_EVENTS: GET_EVENTS<A>
-    readonly GET_USERS: GET_USERS<A>
+    readonly Yup: Yup<A>
+    readonly Nope: Nope
   }
 >
 
-const perhapsURI = 'GetResourcesForOrgActions'
-type GetResourcesForOrgActionsURI = typeof perhapsURI
+const perhapsURI = 'Perhaps'
+type PerhapsURI = typeof perhapsURI
 
 declare module '../src/Registry' {
   interface TypeConstructorRegistry1<A> {
-    readonly [perhapsURI]: GetResourcesForOrgActionsSpec<A>
+    readonly [perhapsURI]: PerhapsSpec<A>
   }
 }
 
-const GetResourcesForOrgActions = mkTaggedUnionRedux<
-  GetResourcesForOrgActionsURI
->()({
-  GET_EVENTS: __,
-  GET_USERS: __,
+const customConfig = {
+  discriminantKey: '__Kind',
+  nullaryConstructorsMode: thunk,
+} as const
+
+const Perhaps = mkTaggedUnionCustom<PerhapsURI>()(customConfig, {
+  Yup: __,
+  Nope: __,
 })
 
 describe('mkTaggedUnion', () => {
   it('properly generates the right API', () => {
-    const hasGET_EVENTSConstructor = 'GET_EVENTS' in GetResourcesForOrgActions
-    assert.strictEqual(hasGET_EVENTSConstructor, true)
+    const hasYupConstructor = 'Yup' in Perhaps
+    assert.strictEqual(hasYupConstructor, true)
 
-    const hasGET_USERSConstructor = 'GET_USERS' in GetResourcesForOrgActions
-    assert.strictEqual(hasGET_USERSConstructor, true)
+    const hasNopeConstructor = 'Nope' in Perhaps
+    assert.strictEqual(hasNopeConstructor, true)
 
-    const hasIsNamespace = 'is' in GetResourcesForOrgActions
+    const hasIsNamespace = 'is' in Perhaps
     assert.strictEqual(hasIsNamespace, true)
 
-    const hasGET_EVENTSTypeGuard = 'GET_EVENTS' in GetResourcesForOrgActions.is
-    assert.strictEqual(hasGET_EVENTSTypeGuard, true)
+    const hasYupTypeGuard = 'Yup' in Perhaps.is
+    assert.strictEqual(hasYupTypeGuard, true)
 
-    const hasGET_USERSTypeGuard = 'GET_USERS' in GetResourcesForOrgActions.is
-    assert.strictEqual(hasGET_USERSTypeGuard, true)
+    const hasNopeTypeGuard = 'Nope' in Perhaps.is
+    assert.strictEqual(hasNopeTypeGuard, true)
 
-    const hasMemberOfUnionTypeGuard =
-      'memberOfUnion' in GetResourcesForOrgActions.is
+    const hasMemberOfUnionTypeGuard = 'memberOfUnion' in Perhaps.is
     assert.strictEqual(hasMemberOfUnionTypeGuard, true)
   })
 
   it('has correct constructors', () => {
-    const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
-    })
-    assert.deepStrictEqual(strGET_EVENTS, {
-      type: 'GET_EVENTS',
-      meta: 'testOrg',
-    })
+    const numYup = Perhaps.Yup({ value: 0 })
+    assert.deepStrictEqual(numYup, { __Kind: 'Yup', value: 0 })
 
-    const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
-    })
-    assert.deepStrictEqual(strGET_USERS, { type: 'GET_USERS', meta: 'testOrg' })
+    const numNope = Perhaps.Nope<number>()
+    assert.deepStrictEqual(numNope, { __Kind: 'Nope' })
   })
 
   it('has correct guards', () => {
-    const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
-    })
-    const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
-    })
+    const numYup = Perhaps.Yup({ value: 0 })
+    const numNope = Perhaps.Nope<number>()
 
-    const isGET_EVENTSTrue = GetResourcesForOrgActions.is.GET_EVENTS(
-      strGET_EVENTS,
-    )
-    const isGET_EVENTSFalse = GetResourcesForOrgActions.is.GET_EVENTS(
-      strGET_USERS,
-    )
-    assert.strictEqual(isGET_EVENTSTrue, true)
-    assert.strictEqual(isGET_EVENTSFalse, false)
+    const isYupTrue = Perhaps.is.Yup(numYup)
+    const isYupFalse = Perhaps.is.Yup(numNope)
+    assert.strictEqual(isYupTrue, true)
+    assert.strictEqual(isYupFalse, false)
 
-    const isGET_USERSTrue = GetResourcesForOrgActions.is.GET_USERS(strGET_USERS)
-    const isGET_USERSFalse = GetResourcesForOrgActions.is.GET_USERS(
-      strGET_EVENTS,
-    )
-    assert.strictEqual(isGET_USERSTrue, true)
-    assert.strictEqual(isGET_USERSFalse, false)
+    const isNopeTrue = Perhaps.is.Nope(numNope)
+    const isNopeFalse = Perhaps.is.Nope(numYup)
+    assert.strictEqual(isNopeTrue, true)
+    assert.strictEqual(isNopeFalse, false)
 
-    const isMemberOfUnionTrueA = GetResourcesForOrgActions.is.memberOfUnion(
-      strGET_USERS,
-    )
-    const isMemberOfUnionTrueB = GetResourcesForOrgActions.is.memberOfUnion(
-      strGET_EVENTS,
-    )
-    const isMemberOfUnionFalse = GetResourcesForOrgActions.is.memberOfUnion({
+    const isMemberOfUnionTrueA = Perhaps.is.memberOfUnion(numNope)
+    const isMemberOfUnionTrueB = Perhaps.is.memberOfUnion(numYup)
+    const isMemberOfUnionFalse = Perhaps.is.memberOfUnion({
       unknown: 'unknown',
     })
+    const isMemberOfUnionFalseWithCorrectDiscriminantKey = Perhaps.is.memberOfUnion(
+      {
+        __Kind: 'unknown',
+      },
+    )
     assert.strictEqual(isMemberOfUnionTrueA, true)
     assert.strictEqual(isMemberOfUnionTrueB, true)
     assert.strictEqual(isMemberOfUnionFalse, false)
+    assert.strictEqual(isMemberOfUnionFalseWithCorrectDiscriminantKey, false)
   })
 
   it('has correct match function', () => {
-    const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
-    })
-    const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
-    })
+    const numYup = Perhaps.Yup({ value: 99 })
+    const numNope = Perhaps.Nope<number>()
 
-    const getEventsIdentity = GetResourcesForOrgActions.match(strGET_EVENTS, {
-      GET_EVENTS: x => x as GetResourcesForOrgActions<string>,
-      GET_USERS: x => x as GetResourcesForOrgActions<string>,
+    const yupIdentity = Perhaps.match(numYup, {
+      Yup: x => x as Perhaps<number>,
+      Nope: x => x as Perhaps<number>,
     })
-    assert.deepStrictEqual(getEventsIdentity, {
-      type: 'GET_EVENTS',
-      meta: 'testOrg',
-    })
+    assert.deepStrictEqual(yupIdentity, { __Kind: 'Yup', value: 99 })
 
-    const getEventsTag = GetResourcesForOrgActions.match(strGET_EVENTS, {
-      GET_EVENTS: x => x.type,
-      GET_USERS: x => x.type,
+    const yupTag = Perhaps.match(numYup, {
+      Yup: x => x.__Kind,
+      Nope: x => x.__Kind,
     })
-    assert.strictEqual(getEventsTag, 'GET_EVENTS')
+    assert.strictEqual(yupTag, 'Yup')
 
-    const getEventsStr = GetResourcesForOrgActions.match(strGET_EVENTS, {
-      GET_EVENTS: x => x.meta + ' events',
-      GET_USERS: x => x.meta + ' users',
+    const yupValue = Perhaps.match(numYup, {
+      Yup: x => x.value,
+      Nope: x => 0,
     })
-    assert.strictEqual(getEventsStr, 'testOrg events')
+    assert.strictEqual(yupValue, 99)
 
-    const getUsersIdentity = GetResourcesForOrgActions.match(strGET_USERS, {
-      GET_EVENTS: x => x as GetResourcesForOrgActions<string>,
-      GET_USERS: x => x as GetResourcesForOrgActions<string>,
+    const nopeIdentity = Perhaps.match(numNope, {
+      Yup: x => x as Perhaps<number>,
+      Nope: x => x as Perhaps<number>,
     })
-    assert.deepStrictEqual(getUsersIdentity, {
-      type: 'GET_USERS',
-      meta: 'testOrg',
-    })
+    assert.deepStrictEqual(nopeIdentity, { __Kind: 'Nope' })
 
-    const getUsersTag = GetResourcesForOrgActions.match(strGET_USERS, {
-      GET_EVENTS: x => x.type,
-      GET_USERS: x => x.type,
+    const nopeTag = Perhaps.match(numNope, {
+      Yup: x => x.__Kind,
+      Nope: x => x.__Kind,
     })
-    assert.strictEqual(getUsersTag, 'GET_USERS')
+    assert.strictEqual(nopeTag, 'Nope')
 
-    const getUsersStr = GetResourcesForOrgActions.match(strGET_USERS, {
-      GET_EVENTS: x => x.meta + ' events',
-      GET_USERS: x => x.meta + ' users',
+    const nopeValue = Perhaps.match(numNope, {
+      Yup: x => x.value,
+      Nope: x => 0,
     })
-    assert.strictEqual(getUsersStr, 'testOrg users')
+    assert.strictEqual(nopeValue, 0)
   })
 })

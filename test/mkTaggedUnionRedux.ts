@@ -107,9 +107,15 @@ describe('mkTaggedUnion', () => {
     const isMemberOfUnionFalse = GetResourcesForOrgActions.is.memberOfUnion({
       unknown: 'unknown',
     })
+    const isMemberOfUnionFalseWithCorrectDiscriminantKey = GetResourcesForOrgActions.is.memberOfUnion(
+      {
+        type: 'unknown',
+      },
+    )
     assert.strictEqual(isMemberOfUnionTrueA, true)
     assert.strictEqual(isMemberOfUnionTrueB, true)
     assert.strictEqual(isMemberOfUnionFalse, false)
+    assert.strictEqual(isMemberOfUnionFalseWithCorrectDiscriminantKey, false)
   })
 
   it('has correct match function', () => {

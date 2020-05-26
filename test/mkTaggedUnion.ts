@@ -78,9 +78,15 @@ describe('mkTaggedUnion', () => {
     const isMemberOfUnionTrueA = Maybe.is.memberOfUnion(numNothing)
     const isMemberOfUnionTrueB = Maybe.is.memberOfUnion(numJust)
     const isMemberOfUnionFalse = Maybe.is.memberOfUnion({ unknown: 'unknown' })
+    const isMemberOfUnionFalseWithCorrectDiscriminantKey = Maybe.is.memberOfUnion(
+      {
+        tag: 'unknown',
+      },
+    )
     assert.strictEqual(isMemberOfUnionTrueA, true)
     assert.strictEqual(isMemberOfUnionTrueB, true)
     assert.strictEqual(isMemberOfUnionFalse, false)
+    assert.strictEqual(isMemberOfUnionFalseWithCorrectDiscriminantKey, false)
   })
 
   it('has correct match function', () => {

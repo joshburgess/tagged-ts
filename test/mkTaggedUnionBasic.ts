@@ -80,9 +80,15 @@ describe('mkTaggedUnion', () => {
     const isMemberOfUnionFalse = Result.is.memberOfUnion({
       unknown: 'unknown',
     })
+    const isMemberOfUnionFalseWithCorrectDiscriminantKey = Result.is.memberOfUnion(
+      {
+        tag: 'unknown',
+      },
+    )
     assert.strictEqual(isMemberOfUnionTrueA, true)
     assert.strictEqual(isMemberOfUnionTrueB, true)
     assert.strictEqual(isMemberOfUnionFalse, false)
+    assert.strictEqual(isMemberOfUnionFalseWithCorrectDiscriminantKey, false)
   })
 
   it('has correct match function', () => {
