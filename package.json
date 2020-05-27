@@ -1,6 +1,6 @@
 {
   "name": "tagged-ts",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A tagged unions code generation library for discriminating tastes",
   "files": [
     "lib",
@@ -21,7 +21,9 @@
     "clean": "rm -rf lib/* es6/*",
     "build": "yarn clean && tsc -p ./tsconfig.build.json && tsc -p ./tsconfig.build-es6.json && yarn docs",
     "postbuild": "prettier --write \"./{lib,es6}/**/*.ts\"",
-    "prepublish": "yarn safety-check && yarn build",
+    "prepublish": "(not-in-publish && echo 'Skipping prepublish, because it's deprecated...') || npm run require-npm4-to-publish",
+    "require-npm4-to-publish": "semver -r '>=4.0.0' $(npm --version) || (echo 'NPM 4+ required to publish' && exit 1)",
+    "prepublishOnly": "yarn safety-check && yarn build",
     "docs": "docs-ts"
   },
   "repository": {
@@ -39,9 +41,11 @@
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.0.5",
     "docs-ts": "^0.4.0",
+    "in-publish": "^2.0.1",
     "jest": "^26.0.1",
     "mocha": "^7.2.0",
     "prettier": "^2.0.5",
+    "semver": "^7.3.2",
     "ts-jest": "^26.0.0",
     "ts-node": "^8.10.1",
     "tslint": "^6.1.2",
