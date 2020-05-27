@@ -92,8 +92,8 @@ describe('mkTaggedUnion', () => {
   })
 
   it('has correct match function', () => {
-    const strSuccess = Result.Success({ value: 'OK' })
-    const numFailure = Result.Failure({ error: 500 })
+    const strSuccess = Result.Success<number, string>({ value: 'OK' })
+    const numFailure = Result.Failure<number, string>({ error: 500 })
 
     const successIdentity = Result.match(strSuccess, {
       Success: x => x as Result<number, string>,

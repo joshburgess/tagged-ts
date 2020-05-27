@@ -149,10 +149,11 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: Omit<
-            DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-            DiscriminantKey
-          >[Field]
+          >]: MemberURI extends keyof TypeConstructorRegistry0[TypeURI][SpecData]
+            ? Field extends TypeConstructorRegistry0[TypeURI][SpecData][MemberURI]
+              ? TypeConstructorRegistry0[TypeURI][SpecData][MemberURI][Field]
+              : never
+            : never
         },
       ) => TypeConstructorRegistry0[TypeURI][SpecType]
     : TypeURI extends keyof TypeConstructorRegistry1<unknown>
@@ -161,24 +162,15 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: unknown extends Omit<
-            DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-            DiscriminantKey
-          >[Field] // Could just be A
-            ? MemberURI extends keyof TypeConstructorRegistry1<
+          >]: MemberURI extends keyof TypeConstructorRegistry1<
+            A
+          >[TypeURI][SpecData]
+            ? Field extends keyof TypeConstructorRegistry1<
                 A
-              >[TypeURI][SpecData]
-              ? TypeConstructorRegistry1<
-                  A
-                >[TypeURI][SpecData][MemberURI][Field &
-                  keyof TypeConstructorRegistry1<
-                    A
-                  >[TypeURI][SpecData][MemberURI]] // `& keyof ...` hack, because stupid TS
+              >[TypeURI][SpecData][MemberURI]
+              ? TypeConstructorRegistry1<A>[TypeURI][SpecData][MemberURI][Field]
               : never
-            : Omit<
-                DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-                DiscriminantKey
-              >[Field]
+            : never
         },
       ) => TypeConstructorRegistry1<A>[TypeURI][SpecType]
     : TypeURI extends keyof TypeConstructorRegistry2<unknown, unknown>
@@ -187,27 +179,20 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: unknown extends Omit<
-            DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-            DiscriminantKey
-          >[Field]
-            ? MemberURI extends keyof TypeConstructorRegistry2<
+          >]: MemberURI extends keyof TypeConstructorRegistry2<
+            E,
+            A
+          >[TypeURI][SpecData]
+            ? Field extends keyof TypeConstructorRegistry2<
                 E,
                 A
-              >[TypeURI][SpecData]
+              >[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry2<
                   E,
                   A
-                >[TypeURI][SpecData][MemberURI][Field &
-                  keyof TypeConstructorRegistry2<
-                    E,
-                    A
-                  >[TypeURI][SpecData][MemberURI]] // `& keyof ...` hack, because stupid TS
+                >[TypeURI][SpecData][MemberURI][Field]
               : never
-            : Omit<
-                DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-                DiscriminantKey
-              >[Field]
+            : never
         },
       ) => TypeConstructorRegistry2<E, A>[TypeURI][SpecType]
     : TypeURI extends keyof TypeConstructorRegistry3<unknown, unknown, unknown>
@@ -216,30 +201,23 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: unknown extends Omit<
-            DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-            DiscriminantKey
-          >[Field]
-            ? MemberURI extends keyof TypeConstructorRegistry3<
+          >]: MemberURI extends keyof TypeConstructorRegistry3<
+            R,
+            E,
+            A
+          >[TypeURI][SpecData]
+            ? Field extends keyof TypeConstructorRegistry3<
                 R,
                 E,
                 A
-              >[TypeURI][SpecData]
+              >[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry3<
                   R,
                   E,
                   A
-                >[TypeURI][SpecData][MemberURI][Field &
-                  keyof TypeConstructorRegistry3<
-                    R,
-                    E,
-                    A
-                  >[TypeURI][SpecData][MemberURI]] // `& keyof ...` hack, because stupid TS
+                >[TypeURI][SpecData][MemberURI][Field]
               : never
-            : Omit<
-                DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-                DiscriminantKey
-              >[Field]
+            : never
         },
       ) => TypeConstructorRegistry3<R, E, A>[TypeURI][SpecType]
     : TypeURI extends keyof TypeConstructorRegistry4<
@@ -253,11 +231,13 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: unknown extends Omit<
-            DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-            DiscriminantKey
-          >[Field]
-            ? MemberURI extends keyof TypeConstructorRegistry4<
+          >]: MemberURI extends TypeConstructorRegistry4<
+            S,
+            R,
+            E,
+            A
+          >[TypeURI][SpecData]
+            ? Field extends keyof TypeConstructorRegistry4<
                 S,
                 R,
                 E,
@@ -268,18 +248,9 @@ export type Constructors<
                   R,
                   E,
                   A
-                >[TypeURI][SpecData][MemberURI][Field &
-                  keyof TypeConstructorRegistry4<
-                    S,
-                    R,
-                    E,
-                    A
-                  >[TypeURI][SpecData][MemberURI]] // `& keyof ...` hack, because stupid TS
+                >[TypeURI][SpecData][MemberURI][Field]
               : never
-            : Omit<
-                DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
-                DiscriminantKey
-              >[Field]
+            : never
         },
       ) => TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecType]
     : never

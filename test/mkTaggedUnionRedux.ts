@@ -4,11 +4,11 @@ import { MkTypeConstructorSpec } from '../src/Registry'
 
 type GET_USERS<A> = {
   readonly type: 'GET_USERS'
-  readonly meta: A
+  readonly meta: { readonly orgId: A }
 }
 type GET_EVENTS<A> = {
   readonly type: 'GET_EVENTS'
-  readonly meta: A
+  readonly meta: { readonly orgId: A }
 }
 type GetResourcesForOrgActions<A> = GET_EVENTS<A> | GET_USERS<A>
 
@@ -61,25 +61,28 @@ describe('mkTaggedUnion', () => {
 
   it('has correct constructors', () => {
     const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
     assert.deepStrictEqual(strGET_EVENTS, {
       type: 'GET_EVENTS',
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
 
     const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
-    assert.deepStrictEqual(strGET_USERS, { type: 'GET_USERS', meta: 'testOrg' })
+    assert.deepStrictEqual(strGET_USERS, {
+      type: 'GET_USERS',
+      meta: { orgId: 'testOrg' },
+    })
   })
 
   it('has correct guards', () => {
     const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
     const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
 
     const isGET_EVENTSTrue = GetResourcesForOrgActions.is.GET_EVENTS(
@@ -120,10 +123,10 @@ describe('mkTaggedUnion', () => {
 
   it('has correct match function', () => {
     const strGET_EVENTS = GetResourcesForOrgActions.GET_EVENTS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
     const strGET_USERS = GetResourcesForOrgActions.GET_USERS({
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
 
     const getEventsIdentity = GetResourcesForOrgActions.match(strGET_EVENTS, {
@@ -132,7 +135,7 @@ describe('mkTaggedUnion', () => {
     })
     assert.deepStrictEqual(getEventsIdentity, {
       type: 'GET_EVENTS',
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
 
     const getEventsTag = GetResourcesForOrgActions.match(strGET_EVENTS, {
@@ -142,8 +145,8 @@ describe('mkTaggedUnion', () => {
     assert.strictEqual(getEventsTag, 'GET_EVENTS')
 
     const getEventsStr = GetResourcesForOrgActions.match(strGET_EVENTS, {
-      GET_EVENTS: x => x.meta + ' events',
-      GET_USERS: x => x.meta + ' users',
+      GET_EVENTS: x => x.meta.orgId + ' events',
+      GET_USERS: x => x.meta.orgId + ' users',
     })
     assert.strictEqual(getEventsStr, 'testOrg events')
 
@@ -153,7 +156,7 @@ describe('mkTaggedUnion', () => {
     })
     assert.deepStrictEqual(getUsersIdentity, {
       type: 'GET_USERS',
-      meta: 'testOrg',
+      meta: { orgId: 'testOrg' },
     })
 
     const getUsersTag = GetResourcesForOrgActions.match(strGET_USERS, {
@@ -163,8 +166,8 @@ describe('mkTaggedUnion', () => {
     assert.strictEqual(getUsersTag, 'GET_USERS')
 
     const getUsersStr = GetResourcesForOrgActions.match(strGET_USERS, {
-      GET_EVENTS: x => x.meta + ' events',
-      GET_USERS: x => x.meta + ' users',
+      GET_EVENTS: x => x.meta.orgId + ' events',
+      GET_USERS: x => x.meta.orgId + ' users',
     })
     assert.strictEqual(getUsersStr, 'testOrg users')
   })
