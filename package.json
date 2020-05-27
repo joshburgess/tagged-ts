@@ -21,7 +21,7 @@
     "clean": "rm -rf lib/* es6/*",
     "build": "yarn clean && tsc -p ./tsconfig.build.json && tsc -p ./tsconfig.build-es6.json && yarn docs",
     "postbuild": "prettier --write \"./{lib,es6}/**/*.ts\"",
-    "prepublish": "(not-in-publish && echo 'Skipping prepublish, because it's deprecated...') || npm run require-npm4-to-publish",
+    "prepublish": "(not-in-publish && echo 'Skipping prepublish (deprecated)') || npm run require-npm4-to-publish",
     "require-npm4-to-publish": "semver -r '>=4.0.0' $(npm --version) || (echo 'NPM 4+ required to publish' && exit 1)",
     "prepublishOnly": "yarn safety-check && yarn build",
     "docs": "docs-ts"
