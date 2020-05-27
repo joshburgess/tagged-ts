@@ -288,6 +288,11 @@ const alsoNo = Perhaps.is.memberOfUnion({ somethingElse: 'unknown' })
 
 Like the `fp-ts` ecosystem libraries, this library is using [`doc-ts`](https://github.com/gcanti/docs-ts) to generate documentation from JSDoc comments in the source code. These generated docs are not currently being hosted anywhere, but they are availble in the `docs` directory. I may host them somewhere in the future.
 
+Generated docs:
+
+- [Main API](https://github.com/joshburgess/tagged-ts/blob/master/docs/modules/index.ts.md)
+- [Registry API](https://github.com/joshburgess/tagged-ts/blob/master/docs/modules/Registry.ts.md)
+
 ## Coming Soon
 
 Better documentation and more features are coming soon.
