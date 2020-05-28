@@ -192,7 +192,7 @@ Example of using the default `mkTaggedUnion`:
 ```ts
 import { __, mkTaggedUnion } from 'tagged-ts'
 
-// `__` is used a general purpose placeholder for when keys are needed at
+// `__` is used as a general purpose placeholder for when keys are needed at
 // run-time, but values are not
 export const Maybe = mkTaggedUnion<'Maybe'>()({
   Just: { tag: __, value: __ },
