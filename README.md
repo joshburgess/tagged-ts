@@ -167,7 +167,7 @@ declare module 'tagged-ts/lib/Registry' {
 }
 ```
 
-Alternatively, instead of writing the `Spec` by hand, we can consruct the `Spec` using the `MkTypeConstructorSpec` type-level utility, which will not allow you to make a mistake.
+Alternatively, instead of writing the `Spec` by hand, we can construct the `Spec` using the `MkTypeConstructorSpec` type-level utility, which will not allow you to make a mistake.
 
 ```ts
 import { MkTypeConstructorSpec } from 'tagged-ts/lib/Registry'
