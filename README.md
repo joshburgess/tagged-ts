@@ -280,7 +280,7 @@ const transformed = Perhaps.match(perhapsB, {
 const yes = Perhaps.is.Nope(perhapsA)
 // const no: boolean
 const no = Perhaps.is.Yup(perhapsA)
-// const no: boolean
+// const alsoNo: boolean
 const alsoNo = Perhaps.is.memberOfUnion({ somethingElse: 'unknown' })
 ```
 
