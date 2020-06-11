@@ -30,40 +30,40 @@ declare module '../src/Registry' {
   }
 }
 
-const Result = mkTaggedUnionBasic<ResultNestedURI>()({
+const ResultNested = mkTaggedUnionBasic<ResultNestedURI>()({
   SuccessNested: __,
   FailureNested: __,
 })
 
 describe('mkTaggedUnion', () => {
   it('properly generates the right API', () => {
-    const hasSuccessConstructor = 'SuccessNested' in Result
+    const hasSuccessConstructor = 'SuccessNested' in ResultNested
     assert.strictEqual(hasSuccessConstructor, true)
 
-    const hasFailureConstructor = 'FailureNested' in Result
+    const hasFailureConstructor = 'FailureNested' in ResultNested
     assert.strictEqual(hasFailureConstructor, true)
 
-    const hasIsNamespace = 'is' in Result
+    const hasIsNamespace = 'is' in ResultNested
     assert.strictEqual(hasIsNamespace, true)
 
-    const hasSuccessTypeGuard = 'SuccessNested' in Result.is
+    const hasSuccessTypeGuard = 'SuccessNested' in ResultNested.is
     assert.strictEqual(hasSuccessTypeGuard, true)
 
-    const hasFailureTypeGuard = 'FailureNested' in Result.is
+    const hasFailureTypeGuard = 'FailureNested' in ResultNested.is
     assert.strictEqual(hasFailureTypeGuard, true)
 
-    const hasMemberOfUnionTypeGuard = 'memberOfUnion' in Result.is
+    const hasMemberOfUnionTypeGuard = 'memberOfUnion' in ResultNested.is
     assert.strictEqual(hasMemberOfUnionTypeGuard, true)
   })
 
   it('has correct constructors', () => {
-    const strSuccess = Result.SuccessNested({ value: { nested: 'OK' } })
+    const strSuccess = ResultNested.SuccessNested({ value: { nested: 'OK' } })
     assert.deepStrictEqual(strSuccess, {
       tag: 'SuccessNested',
       value: { nested: 'OK' },
     })
 
-    const numFailure = Result.FailureNested({ error: { nested: 404 } })
+    const numFailure = ResultNested.FailureNested({ error: { nested: 404 } })
     assert.deepStrictEqual(numFailure, {
       tag: 'FailureNested',
       error: { nested: 404 },
@@ -71,25 +71,25 @@ describe('mkTaggedUnion', () => {
   })
 
   it('has correct guards', () => {
-    const strSuccess = Result.SuccessNested({ value: { nested: 'OK' } })
-    const numFailure = Result.FailureNested({ error: { nested: 500 } })
+    const strSuccess = ResultNested.SuccessNested({ value: { nested: 'OK' } })
+    const numFailure = ResultNested.FailureNested({ error: { nested: 500 } })
 
-    const isSuccessTrue = Result.is.SuccessNested(strSuccess)
-    const isSuccessFalse = Result.is.SuccessNested(numFailure)
+    const isSuccessTrue = ResultNested.is.SuccessNested(strSuccess)
+    const isSuccessFalse = ResultNested.is.SuccessNested(numFailure)
     assert.strictEqual(isSuccessTrue, true)
     assert.strictEqual(isSuccessFalse, false)
 
-    const isFailureTrue = Result.is.FailureNested(numFailure)
-    const isFailureFalse = Result.is.FailureNested(strSuccess)
+    const isFailureTrue = ResultNested.is.FailureNested(numFailure)
+    const isFailureFalse = ResultNested.is.FailureNested(strSuccess)
     assert.strictEqual(isFailureTrue, true)
     assert.strictEqual(isFailureFalse, false)
 
-    const isMemberOfUnionTrueA = Result.is.memberOfUnion(numFailure)
-    const isMemberOfUnionTrueB = Result.is.memberOfUnion(strSuccess)
-    const isMemberOfUnionFalse = Result.is.memberOfUnion({
+    const isMemberOfUnionTrueA = ResultNested.is.memberOfUnion(numFailure)
+    const isMemberOfUnionTrueB = ResultNested.is.memberOfUnion(strSuccess)
+    const isMemberOfUnionFalse = ResultNested.is.memberOfUnion({
       unknown: 'unknown',
     })
-    const isMemberOfUnionFalseWithCorrectDiscriminantKey = Result.is.memberOfUnion(
+    const isMemberOfUnionFalseWithCorrectDiscriminantKey = ResultNested.is.memberOfUnion(
       {
         tag: 'unknown',
       },
@@ -101,14 +101,14 @@ describe('mkTaggedUnion', () => {
   })
 
   it('has correct match function', () => {
-    const strSuccess = Result.SuccessNested<number, string>({
+    const strSuccess = ResultNested.SuccessNested<number, string>({
       value: { nested: 'OK' },
     })
-    const numFailure = Result.FailureNested<number, string>({
+    const numFailure = ResultNested.FailureNested<number, string>({
       error: { nested: 500 },
     })
 
-    const successIdentity = Result.match(strSuccess, {
+    const successIdentity = ResultNested.match(strSuccess, {
       SuccessNested: x => x as ResultNested<number, string>,
       FailureNested: x => x as ResultNested<number, string>,
     })
@@ -117,19 +117,19 @@ describe('mkTaggedUnion', () => {
       value: { nested: 'OK' },
     })
 
-    const successTag = Result.match(strSuccess, {
+    const successTag = ResultNested.match(strSuccess, {
       SuccessNested: x => x.tag,
       FailureNested: x => x.tag,
     })
     assert.strictEqual(successTag, 'SuccessNested')
 
-    const successValue = Result.match(strSuccess, {
+    const successValue = ResultNested.match(strSuccess, {
       SuccessNested: x => x.value.nested,
       FailureNested: x => 'failed',
     })
     assert.strictEqual(successValue, 'OK')
 
-    const failureIdentity = Result.match(numFailure, {
+    const failureIdentity = ResultNested.match(numFailure, {
       SuccessNested: x => x as ResultNested<number, string>,
       FailureNested: x => x as ResultNested<number, string>,
     })
@@ -138,13 +138,13 @@ describe('mkTaggedUnion', () => {
       error: { nested: 500 },
     })
 
-    const failureTag = Result.match(numFailure, {
+    const failureTag = ResultNested.match(numFailure, {
       SuccessNested: x => x.tag,
       FailureNested: x => x.tag,
     })
     assert.strictEqual(failureTag, 'FailureNested')
 
-    const failureValue = Result.match(numFailure, {
+    const failureValue = ResultNested.match(numFailure, {
       SuccessNested: x => x.value.nested,
       FailureNested: x => 'failed',
     })

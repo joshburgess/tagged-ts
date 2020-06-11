@@ -76,7 +76,7 @@ export type Constructors<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
           >]: MemberURI extends keyof TypeConstructorRegistry0[TypeURI][SpecData]
-            ? Field extends TypeConstructorRegistry0[TypeURI][SpecData][MemberURI]
+            ? Field extends keyof TypeConstructorRegistry0[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry0[TypeURI][SpecData][MemberURI][Field]
               : never
             : never
@@ -127,8 +127,8 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: MemberURI extends TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecData]
-            ? Field extends keyof TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecData]
+          >]: MemberURI extends keyof TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecData]
+            ? Field extends keyof TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry4<S, R, E, A>[TypeURI][SpecData][MemberURI][Field]
               : never
             : never
@@ -338,7 +338,7 @@ Generates data constructors for the members of a tagged union
 **Signature**
 
 ```ts
-export declare const mkConstructors: <TypeURI extends never>() => <
+export declare const mkConstructors: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends StringKeyOf<T>,
   Mode extends NullaryConstructorsMode
@@ -363,7 +363,7 @@ Generates type guards for the members of a tagged union
 **Signature**
 
 ```ts
-export declare const mkGuards: <TypeURI extends never>() => <
+export declare const mkGuards: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends StringKeyOf<T>
 >(
@@ -390,7 +390,7 @@ to a "generalized fold"
 **Signature**
 
 ```ts
-export declare const mkMatch: <TypeURI extends never>() => <
+export declare const mkMatch: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends StringKeyOf<T>
 >(config: {
@@ -416,7 +416,7 @@ functions instead of constants and/or you desire less boilerplate
 **Signature**
 
 ```ts
-export declare const mkTaggedUnion: <TypeURI extends never>() => <
+export declare const mkTaggedUnion: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends 'tag' & keyof T
 >(
@@ -447,7 +447,7 @@ Nullary constructors mode: `'thunk'`
 **Signature**
 
 ```ts
-export declare const mkTaggedUnionBasic: <TypeURI extends never>() => <
+export declare const mkTaggedUnionBasic: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends 'tag' & keyof T
 >(
@@ -471,7 +471,7 @@ flexibility
 **Signature**
 
 ```ts
-export declare const mkTaggedUnionCustom: <TypeURI extends never>() => <
+export declare const mkTaggedUnionCustom: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends StringKeyOf<T>,
   Mode extends NullaryConstructorsMode
@@ -506,7 +506,7 @@ Nullary constructors mode: `'thunk'`
 **Signature**
 
 ```ts
-export declare const mkTaggedUnionRedux: <TypeURI extends never>() => <
+export declare const mkTaggedUnionRedux: <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetSpec<TypeURI>['type'],
   DiscriminantKey extends 'type' & keyof T
 >(
