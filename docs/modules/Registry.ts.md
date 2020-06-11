@@ -6,7 +6,7 @@ parent: Modules
 
 # Registry overview
 
-Added in v0.0.1
+Added in v0.2.0
 
 ---
 
@@ -41,7 +41,7 @@ or, in other words, those of kind: `*`
 export interface TypeConstructorRegistry0 {}
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # TypeConstructorRegistry1 (interface)
 
@@ -55,7 +55,7 @@ or, in other words, those of kind: `* -> *`
 export interface TypeConstructorRegistry1<A> {}
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # TypeConstructorRegistry2 (interface)
 
@@ -69,7 +69,7 @@ or, in other words, those of kind: `* -> * -> *`
 export interface TypeConstructorRegistry2<E, A> {}
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # TypeConstructorRegistry3 (interface)
 
@@ -83,7 +83,7 @@ or, in other words, those of kind: `* -> * -> * -> *`
 export interface TypeConstructorRegistry3<R, E, A> {}
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # TypeConstructorRegistry4 (interface)
 
@@ -97,7 +97,7 @@ or, in other words, those of kind: `* -> * -> * -> * -> *`
 export interface TypeConstructorRegistry4<S, R, E, A> {}
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # GetData (type alias)
 
@@ -110,7 +110,7 @@ A type-level utility that gets a the `data` portion of a type constructor
 export type GetData<TypeURI extends KeyOfTypeConstructorRegistry> = GetSpecField<TypeURI, SpecData>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # GetSpec (type alias)
 
@@ -133,7 +133,7 @@ export type GetSpec<TypeURI extends KeyOfTypeConstructorRegistry> = TypeURI exte
   : never
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # GetSpecField (type alias)
 
@@ -148,7 +148,7 @@ export type GetSpecField<TypeURI extends KeyOfTypeConstructorRegistry, SpecField
 >[SpecField]
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # GetType (type alias)
 
@@ -161,7 +161,7 @@ A type-level utility that gets a the `type` portion of a type constructor
 export type GetType<TypeURI extends KeyOfTypeConstructorRegistry> = GetSpecField<TypeURI, SpecType>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # KeyOfTypeConstructorRegistry (type alias)
 
@@ -173,7 +173,7 @@ A union of all keys of the entries in the type constructor registries
 export type KeyOfTypeConstructorRegistry = DistributiveKeyOf<TypeConstructorRegistry>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # MkTypeConstructorSpec (type alias)
 
@@ -198,7 +198,7 @@ export type MkTypeConstructorSpec<
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # SpecData (type alias)
 
@@ -210,7 +210,7 @@ A type-level literal string corresponding to the `data` field of a `Spec`
 export type SpecData = 'data'
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # SpecType (type alias)
 
@@ -222,7 +222,7 @@ A type-level literal string corresponding to the `type` field of a `Spec`
 export type SpecType = 'type'
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # TypeConstructorRegistry (type alias)
 
@@ -239,4 +239,4 @@ export type TypeConstructorRegistry =
   | TypeConstructorRegistry4<unknown, unknown, unknown, unknown>
 ```
 
-Added in v0.0.1
+Added in v0.2.0

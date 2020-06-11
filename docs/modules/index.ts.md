@@ -6,7 +6,7 @@ parent: Modules
 
 # index overview
 
-Added in v0.0.1
+Added in v0.2.0
 
 ---
 
@@ -138,7 +138,7 @@ export type Constructors<
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # Guards (type alias)
 
@@ -204,7 +204,7 @@ export type Guards<
   : never
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # Match (type alias)
 
@@ -267,7 +267,7 @@ export type Match<
   : never
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # NullaryConstructorsMode (type alias)
 
@@ -279,7 +279,7 @@ A union of the valid options used to set the nullary constructors mode
 export type NullaryConstructorsMode = NullaryConstructorsMode_Constant | NullaryConstructorsMode_Thunk
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # NullaryConstructorsMode_Constant (type alias)
 
@@ -291,7 +291,7 @@ The `NullaryConstructorsMode` setting for 'constant' nullary constructors
 export type NullaryConstructorsMode_Constant = typeof constant
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # NullaryConstructorsMode_Thunk (type alias)
 
@@ -303,7 +303,7 @@ The `NullaryConstructorsMode` setting for 'thunk' nullary constructors
 export type NullaryConstructorsMode_Thunk = typeof thunk
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # \_\_
 
@@ -317,7 +317,7 @@ Used as a placeholder when interacting with the library's generation functions
 export declare const __: __
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # constant
 
@@ -329,7 +329,7 @@ Used as configuration to set the `NullaryConstructorsMode` to 'constant'
 export declare const constant: 'constant'
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkConstructors
 
@@ -354,7 +354,7 @@ export declare const mkConstructors: <TypeURI extends KeyOfTypeConstructorRegist
 ) => Constructors<TypeURI, T, DiscriminantKey, Mode>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkGuards
 
@@ -378,7 +378,7 @@ export declare const mkGuards: <TypeURI extends KeyOfTypeConstructorRegistry>() 
 ) => Guards<TypeURI, T, DiscriminantKey>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkMatch
 
@@ -398,7 +398,7 @@ export declare const mkMatch: <TypeURI extends KeyOfTypeConstructorRegistry>() =
 }) => Match<TypeURI, T, DiscriminantKey>
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkTaggedUnion
 
@@ -431,7 +431,7 @@ export declare const mkTaggedUnion: <TypeURI extends KeyOfTypeConstructorRegistr
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkTaggedUnionBasic
 
@@ -458,7 +458,7 @@ export declare const mkTaggedUnionBasic: <TypeURI extends KeyOfTypeConstructorRe
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkTaggedUnionCustom
 
@@ -490,7 +490,7 @@ export declare const mkTaggedUnionCustom: <TypeURI extends KeyOfTypeConstructorR
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # mkTaggedUnionRedux
 
@@ -517,7 +517,7 @@ export declare const mkTaggedUnionRedux: <TypeURI extends KeyOfTypeConstructorRe
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0
 
 # thunk
 
@@ -529,4 +529,4 @@ Used as configuration to set the `NullaryConstructorsMode` to 'thunk'
 export declare const thunk: 'thunk'
 ```
 
-Added in v0.0.1
+Added in v0.2.0

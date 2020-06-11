@@ -6,7 +6,7 @@ parent: Modules
 
 # Utils overview
 
-Added in v0.0.1
+Added in v0.2.0
 
 ---
 
@@ -30,4 +30,4 @@ export interface Nominal<Identifier extends string, A> {
 }
 ```
 
-Added in v0.0.1
+Added in v0.2.0

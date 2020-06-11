@@ -1,5 +1,5 @@
 /**
- * @since 0.0.1
+ * @since 0.2.0
  */
 
 import {
@@ -28,35 +28,35 @@ import {
 /**
  * Used as configuration to set the `NullaryConstructorsMode` to 'constant'
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const constant = 'constant'
 
 /**
  * The `NullaryConstructorsMode` setting for 'constant' nullary constructors
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type NullaryConstructorsMode_Constant = typeof constant
 
 /**
  * Used as configuration to set the `NullaryConstructorsMode` to 'thunk'
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const thunk = 'thunk'
 
 /**
  * The `NullaryConstructorsMode` setting for 'thunk' nullary constructors
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type NullaryConstructorsMode_Thunk = typeof thunk
 
 /**
  * A union of the valid options used to set the nullary constructors mode
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type NullaryConstructorsMode =
   | NullaryConstructorsMode_Constant
@@ -65,14 +65,14 @@ export type NullaryConstructorsMode =
 /**
  * NOT EXPORTED
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 const mk__ = (a: void): __ => unsafeCoerce<void, __>(a)
 
 /**
  * NOT EXPORTED
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 // tslint:disable-next-line class-name
 interface __ extends Nominal<'__', void> {}
@@ -82,7 +82,7 @@ interface __ extends Nominal<'__', void> {}
  *
  * Used as a placeholder when interacting with the library's generation functions
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const __ = mk__(undefined)
 
@@ -91,7 +91,7 @@ export const __ = mk__(undefined)
 /**
  * A type-level representation of a tagged union's generated data constructors
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type Constructors<
   TypeURI extends KeyOfTypeConstructorRegistry,
@@ -259,7 +259,7 @@ export type Constructors<
 /**
  * Generates data constructors for the members of a tagged union
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkConstructors = <
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -370,7 +370,7 @@ export const mkConstructors = <
 /**
  * A type-level representation of a tagged union's generated `match` function
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type Match<
   TypeURI extends KeyOfTypeConstructorRegistry,
@@ -438,7 +438,7 @@ export type Match<
  * NOTE: Some libraries call this `fold` or `cata` because of the similarity
  * to a "generalized fold"
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkMatch = <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetType<TypeURI>,
@@ -470,7 +470,7 @@ export const mkMatch = <TypeURI extends KeyOfTypeConstructorRegistry>() => <
 /**
  * A type-level representation of a tagged union's generated type guard predicates
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type Guards<
   TypeURI extends KeyOfTypeConstructorRegistry,
@@ -556,7 +556,7 @@ export type Guards<
 /**
  * Generates type guards for the members of a tagged union
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkGuards = <TypeURI extends KeyOfTypeConstructorRegistry>() => <
   T extends GetType<TypeURI>,
@@ -640,7 +640,7 @@ export const mkGuards = <TypeURI extends KeyOfTypeConstructorRegistry>() => <
  * useful to those who don't mind passing in a config each time & want maximum
  * flexibility
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkTaggedUnionCustom = <
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -688,7 +688,7 @@ export const mkTaggedUnionCustom = <
  * Use `mkTaggedUnionBasic` instead if you're okay with nullary constructors being
  * functions instead of constants and/or you desire less boilerplate
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkTaggedUnion = <
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -727,7 +727,7 @@ export const mkTaggedUnion = <
  *
  * Nullary constructors mode: `'thunk'`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkTaggedUnionBasic = <
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -762,7 +762,7 @@ export const mkTaggedUnionBasic = <
  *
  * Nullary constructors mode: `'thunk'`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export const mkTaggedUnionRedux = <
   TypeURI extends KeyOfTypeConstructorRegistry

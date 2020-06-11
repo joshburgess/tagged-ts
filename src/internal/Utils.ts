@@ -1,5 +1,5 @@
 /**
- * @since 0.0.1
+ * @since 0.2.0
  */
 
 // internal type-level utilities
@@ -7,7 +7,7 @@
 /**
  * A version of `keyof` that distributes over the members of a union type
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -19,7 +19,7 @@ export type DistributiveKeyOf<U extends object> = U extends unknown
  * Select the member of a union type by matching on the the provided key, `K`,
  * and value, `V`, returning `never` if no match occurs
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -39,7 +39,7 @@ export type SelectUnionMember<
 /**
  * Used to specify the string keys of an object or union of objects
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -48,7 +48,7 @@ export type StringKeyOf<A extends object> = keyof A & string
 /**
  * A type-level representation of the tag for a data constructor
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -60,7 +60,7 @@ export type DiscriminantValue<
 /**
  * A type-level representation of a member of a tagged union
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -73,7 +73,7 @@ export type DiscriminatedUnionMember<
 /**
  * An interface used to construct (simulated) Nominal types
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -88,7 +88,7 @@ export interface Nominal<Identifier extends string, A> {
 /**
  * Keys the tags associated with each member of a tagged union
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */
@@ -102,7 +102,7 @@ export const getMemberTags = <
 /**
  * Unsafe type coercion, converting any `A` into any `B`
  *
- * @since 0.0.1
+ * @since 0.2.0
  *
  * @internal !!! Use at your own risk, could change at any time !!!
  */

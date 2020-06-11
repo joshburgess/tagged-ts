@@ -1,5 +1,5 @@
 /**
- * @since 0.0.1
+ * @since 0.2.0
  */
 
 import {
@@ -15,7 +15,7 @@ import {
 /**
  * A type-level utility that helps to construct a valid type constructor `Spec`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type MkTypeConstructorSpec<
   Type extends object,
@@ -37,7 +37,7 @@ export type MkTypeConstructorSpec<
  *
  * or, in other words, those of kind: `*`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry0 {}
 
@@ -46,7 +46,7 @@ export interface TypeConstructorRegistry0 {}
  *
  * or, in other words, those of kind: `* -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry1<A> {}
 
@@ -55,7 +55,7 @@ export interface TypeConstructorRegistry1<A> {}
  *
  * or, in other words, those of kind: `* -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry2<E, A> {}
 
@@ -64,7 +64,7 @@ export interface TypeConstructorRegistry2<E, A> {}
  *
  * or, in other words, those of kind: `* -> * -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry3<R, E, A> {}
 
@@ -73,14 +73,14 @@ export interface TypeConstructorRegistry3<R, E, A> {}
  *
  * or, in other words, those of kind: `* -> * -> * -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry4<S, R, E, A> {}
 
 /**
  * A union of all type constructor registries
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type TypeConstructorRegistry =
   | TypeConstructorRegistry0
@@ -92,7 +92,7 @@ export type TypeConstructorRegistry =
 /**
  * A union of all keys of the entries in the type constructor registries
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type KeyOfTypeConstructorRegistry = DistributiveKeyOf<
   TypeConstructorRegistry
@@ -102,7 +102,7 @@ export type KeyOfTypeConstructorRegistry = DistributiveKeyOf<
  * A type-level utility that gets the type constructor `Spec` associated with
  * a given key of an entry in one of the type constructor registries
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type GetSpec<
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -126,14 +126,14 @@ export type GetSpec<
 /**
  * A type-level literal string corresponding to the `type` field of a `Spec`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type SpecType = 'type'
 
 /**
  * A type-level literal string corresponding to the `data` field of a `Spec`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type SpecData = 'data'
 
@@ -141,7 +141,7 @@ export type SpecData = 'data'
  * A type-level utility that gets a portion of a type constructor `Spec` when
  * given a type constructor registry key and a `Spec` field, 'type' or 'data'
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type GetSpecField<
   TypeURI extends KeyOfTypeConstructorRegistry,
@@ -152,7 +152,7 @@ export type GetSpecField<
  * A type-level utility that gets a the `type` portion of a type constructor
  * `Spec` when given a type constructor registry key
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type GetType<
   TypeURI extends KeyOfTypeConstructorRegistry
@@ -162,7 +162,7 @@ export type GetType<
  * A type-level utility that gets a the `data` portion of a type constructor
  * `Spec` when given a type constructor registry key
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type GetData<
   TypeURI extends KeyOfTypeConstructorRegistry

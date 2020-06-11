@@ -85,7 +85,7 @@ In `tagged-ts`, the type-level maps represent a mapping from a unique identifier
  *
  * or, in other words, those of kind: `*`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry0 {}
 
@@ -94,7 +94,7 @@ export interface TypeConstructorRegistry0 {}
  *
  * or, in other words, those of kind: `* -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry1<A> {}
 
@@ -103,7 +103,7 @@ export interface TypeConstructorRegistry1<A> {}
  *
  * or, in other words, those of kind: `* -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry2<E, A> {}
 
@@ -112,7 +112,7 @@ export interface TypeConstructorRegistry2<E, A> {}
  *
  * or, in other words, those of kind: `* -> * -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry3<R, E, A> {}
 
@@ -121,14 +121,14 @@ export interface TypeConstructorRegistry3<R, E, A> {}
  *
  * or, in other words, those of kind: `* -> * -> * -> * -> *`
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export interface TypeConstructorRegistry4<S, R, E, A> {}
 
 /**
  * A union of all type constructor registries
  *
- * @since 0.0.1
+ * @since 0.2.0
  */
 export type TypeConstructorRegistry =
   | TypeConstructorRegistry0
