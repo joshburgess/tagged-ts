@@ -150,7 +150,7 @@ export type Constructors<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
           >]: MemberURI extends keyof TypeConstructorRegistry0[TypeURI][SpecData]
-            ? Field extends TypeConstructorRegistry0[TypeURI][SpecData][MemberURI]
+            ? Field extends keyof TypeConstructorRegistry0[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry0[TypeURI][SpecData][MemberURI][Field]
               : never
             : never
@@ -231,7 +231,7 @@ export type Constructors<
           [Field in keyof Omit<
             DiscriminatedUnionMember<T, DiscriminantKey, MemberURI>,
             DiscriminantKey
-          >]: MemberURI extends TypeConstructorRegistry4<
+          >]: MemberURI extends keyof TypeConstructorRegistry4<
             S,
             R,
             E,
@@ -242,7 +242,7 @@ export type Constructors<
                 R,
                 E,
                 A
-              >[TypeURI][SpecData]
+              >[TypeURI][SpecData][MemberURI]
               ? TypeConstructorRegistry4<
                   S,
                   R,
