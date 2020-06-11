@@ -1,6 +1,6 @@
 {
   "name": "tagged-ts",
-  "version": "0.1.6",
+  "version": "0.0.1",
   "description": "A tagged unions code generation library for discriminating tastes",
   "files": [
     "lib",
@@ -20,10 +20,14 @@
     "test-via-mocha": "TS_NODE_CACHE=false mocha -r ts-node/register test/*.ts",
     "clean": "rm -rf lib/* es6/*",
     "build": "yarn clean && tsc -p ./tsconfig.build.json && tsc -p ./tsconfig.build-es6.json && yarn docs",
+    "make-tsc-files": "node make-build-tsc-files.js",
+    "type-check-tsc-files": "tsc --noEmit --strict lib-tsc.ts es6-tsc.ts",
+    "clean-tsc-files": "rm lib-tsc.ts es6-tsc.ts",
+    "type-check-build": "yarn make-tsc-files && yarn type-check-tsc-files && yarn clean-tsc-files",
     "postbuild": "prettier --write \"./{lib,es6}/**/*.ts\"",
     "prepublish": "(not-in-publish && echo 'Skipping prepublish (deprecated)') || npm run require-npm4-to-publish",
     "require-npm4-to-publish": "semver -r '>=4.0.0' $(npm --version) || (echo 'NPM 4+ required to publish' && exit 1)",
-    "prepublishOnly": "yarn safety-check && yarn build",
+    "prepublishOnly": "yarn safety-check && yarn build && yarn type-check-build",
     "docs": "docs-ts"
   },
   "repository": {
@@ -41,6 +45,7 @@
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.0.5",
     "docs-ts": "^0.4.0",
+    "fs": "^0.0.1-security",
     "in-publish": "^2.0.1",
     "jest": "^26.0.1",
     "mocha": "^7.2.0",
@@ -51,7 +56,7 @@
     "tslint": "^6.1.2",
     "tslint-config-standard": "^9.0.0",
     "tslint-immutable": "^6.0.1",
-    "typescript": "^3.9.3"
+    "typescript": "^3.9.5"
   },
   "keywords": [
     "union",

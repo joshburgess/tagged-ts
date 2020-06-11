@@ -8,3 +8,8 @@ dev
 coverage
 .idea
 docs-examples
+es6-tsc.js
+es6-tsc.ts
+lib-tsc.js
+lib-tsc.ts
+make-build-tsc-files.js

@@ -21,12 +21,12 @@ type GetResourcesForOrgActionsSpec<A> = MkTypeConstructorSpec<
   }
 >
 
-const perhapsURI = 'GetResourcesForOrgActions'
-type GetResourcesForOrgActionsURI = typeof perhapsURI
+const getResourcesForOrgActions = 'GetResourcesForOrgActions'
+type GetResourcesForOrgActionsURI = typeof getResourcesForOrgActions
 
 declare module '../src/Registry' {
   interface TypeConstructorRegistry1<A> {
-    readonly [perhapsURI]: GetResourcesForOrgActionsSpec<A>
+    readonly [getResourcesForOrgActions]: GetResourcesForOrgActionsSpec<A>
   }
 }
 
