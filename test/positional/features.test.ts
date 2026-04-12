@@ -123,12 +123,15 @@ describe('show (positional)', () => {
     )
   })
 
-  it('renders a tagged union nested inside another as a plain object', () => {
-    // Nested member has no prototype distinction — formatValue sees it as plain
-    // and renders its own `tag` key verbatim.
+  it('recursively renders nested members of the same union', () => {
     expect(Maybe.show(Maybe.Just(Maybe.Just(1) as unknown as number))).toBe(
-      'Just({ tag: "Just", value: 1 })',
+      'Just(Just(1))',
     )
+  })
+
+  it('renders a tagged union from a different shape as a plain object', () => {
+    // Stream is a different union — its members aren't in Maybe's tag set,
+    // so they render via the generic object formatter.
     expect(
       Maybe.show(Maybe.Just(Stream.Emit('s', 42) as unknown as number)),
     ).toBe('Just({ tag: "Emit", state: "s", value: 42 })')
@@ -220,6 +223,51 @@ describe('show (positional)', () => {
     cyclic.self = cyclic
     expect(Maybe.show(Maybe.Just(cyclic as unknown as number))).toBe(
       'Just({ self: [Circular] })',
+    )
+  })
+
+  it('renders shared references (DAG) without false [Circular]', () => {
+    // The two entries share the same object reference but there is no
+    // cycle — both should render in full.
+    const shared = { n: 1 }
+    expect(
+      Maybe.show(Maybe.Just({ a: shared, b: shared } as unknown as number)),
+    ).toBe('Just({ a: { n: 1 }, b: { n: 1 } })')
+  })
+
+  it('recursively pretty-prints a recursive tagged union (Tree)', () => {
+    type Leaf = { readonly tag: 'Leaf' }
+    type Node<A> = {
+      readonly tag: 'Node'
+      readonly left: Tree<A>
+      readonly value: A
+      readonly right: Tree<A>
+    }
+    type Tree<A> = Leaf | Node<A>
+    interface TreeLambda extends TaggedLambda1 {
+      readonly type: Tree<this['A']>
+      readonly data: MkData<this['type']>
+    }
+    const Tree = mkTaggedUnion<TreeLambda>()({
+      Leaf: [],
+      Node: ['left', 'value', 'right'],
+    })
+    const t: Tree<number> = Tree.Node(
+      Tree.Node(Tree.Leaf, 1, Tree.Leaf),
+      2,
+      Tree.Node(Tree.Leaf, 3, Tree.Leaf),
+    )
+    expect(Tree.show(t)).toBe(
+      'Node(Node(Leaf, 1, Leaf), 2, Node(Leaf, 3, Leaf))',
+    )
+  })
+
+  it('does not flag repeated nullary singletons as [Circular]', () => {
+    // Reusing Maybe.Nothing (a nullary singleton) in multiple positions
+    // of a plain-object container must not trip cycle detection.
+    const n = Maybe.Nothing
+    expect(Maybe.show(Maybe.Just({ a: n, b: n } as unknown as number))).toBe(
+      'Just({ a: Nothing, b: Nothing })',
     )
   })
 })

@@ -283,7 +283,18 @@ Stream.show(Stream.Emit('s', 42))  // 'Emit("s", 42)'
 Stream.show(Stream.End)            // 'End'
 ```
 
-Field values are formatted with `JSON.stringify`.
+Nested members of the same union are formatted recursively, so recursive
+types like `Tree<A>` or JSON ASTs pretty-print correctly:
+
+```ts
+Tree.show(Tree.Node(Tree.Leaf, 'root', Tree.Node(Tree.Leaf, 'right', Tree.Leaf)))
+// 'Node(Leaf, "root", Node(Leaf, "right", Leaf))'
+```
+
+Foreign values (primitives, arrays, plain objects, `Date`, `Map`, `Set`,
+class instances) are rendered by a generic formatter similar to
+`util.inspect`. True cycles are marked `[Circular]`; shared references
+without a cycle (DAGs) are rendered in full.
 
 ### `equals(a, b)` — Structural deep equality
 
