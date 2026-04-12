@@ -46,8 +46,14 @@ const entry = (input, outDir) => ({
   },
 })
 
+const fastCheckEntry = {
+  ...entry('src/fast-check/index.ts', 'dist/fast-check'),
+  external: ['fast-check'],
+}
+
 export default [
   entry('src/index.ts', 'dist'),
   entry('src/named/index.ts', 'dist/named'),
   entry('src/positional/index.ts', 'dist/positional'),
+  fastCheckEntry,
 ]

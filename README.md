@@ -17,6 +17,8 @@ npm install tagged-ts
 - **Type guards** — per-member guards that narrow the union, plus a `memberOfUnion` guard
 - **Pattern matching** — exhaustive `match`, widened `matchW`, partial `matchOr`, and curried `matcher`/`matcherW` variants
 - **Union return types** — constructors return the full union type (e.g. `Maybe<A>`), forcing pattern matching for safe access
+- **Batteries included** — generated `tags` list, `show` pretty-printer, structural `equals`, and shallow `parse`
+- **Property-based testing** — optional `tagged-ts/fast-check` entry point generates `fc.Arbitrary<Union>` from a field-arbitrary spec
 
 ## Modules
 
@@ -26,6 +28,7 @@ tagged-ts provides two constructor styles as separate submodules. Pick the one t
 |---|---|---|
 | `tagged-ts/named` | Object with named fields | `Maybe.Just({ value: 42 })` |
 | `tagged-ts/positional` | Positional arguments | `Maybe.Just(42)` |
+| `tagged-ts/fast-check` | fast-check `Arbitrary` builder (optional peer dep) | `mkArbitrary<Maybe<number>>({ ... })` |
 
 The root `tagged-ts` module exports only shared types (type lambdas, `MkData`, etc.). To create tagged unions, import from one of the submodules.
 
@@ -240,6 +243,116 @@ const describe = Maybe.matcherW<number, number | string>({
 
 describe(Maybe.Just({ value: 42 })) // number | string
 ```
+
+## Utilities
+
+Every tagged union comes with four generated utilities, available on both the `tagged-ts/named` and `tagged-ts/positional` modules.
+
+### `tags` — Readonly list of member tags
+
+A frozen array of all member tag strings, in the order they were declared. Useful for runtime enumeration, validation, dropdown options, etc.
+
+```ts
+Maybe.tags // readonly ['Just', 'Nothing']
+
+for (const tag of Maybe.tags) {
+  console.log(tag)
+}
+```
+
+### `show(value)` — Pretty-printer
+
+Formats a union value as a string. The format depends on the constructor style:
+
+```ts
+// Named:    Tag({ field: value })
+import { mkTaggedUnion } from 'tagged-ts/named'
+const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+
+Maybe.show(Maybe.Just({ value: 42 }))  // 'Just({ value: 42 })'
+Maybe.show(Maybe.Nothing)              // 'Nothing'
+
+// Positional: Tag(v1, v2)
+import { mkTaggedUnion } from 'tagged-ts/positional'
+const Stream = mkTaggedUnion<StreamLambda>()({
+  Emit: ['state', 'value'],
+  End: [],
+})
+
+Stream.show(Stream.Emit('s', 42))  // 'Emit("s", 42)'
+Stream.show(Stream.End)            // 'End'
+```
+
+Field values are formatted with `JSON.stringify`.
+
+### `equals(a, b)` — Structural deep equality
+
+Compares two union values structurally. Returns `true` when both have the same discriminant and all fields are deeply equal (recursive over plain objects and arrays; primitives compared with `Object.is`, so `NaN === NaN`).
+
+```ts
+Maybe.equals(Maybe.Just({ value: 42 }), Maybe.Just({ value: 42 }))  // true
+Maybe.equals(Maybe.Just({ value: 42 }), Maybe.Nothing)              // false
+Maybe.equals(
+  Maybe.Just({ value: { a: 1, b: [1, 2] } }),
+  Maybe.Just({ value: { a: 1, b: [1, 2] } }),
+)                                                                   // true (deep)
+```
+
+Non-plain objects (Map, Set, Date, class instances) fall back to reference equality.
+
+### `parse(x)` — Shallow tag-based narrowing
+
+Parses an `unknown` value to the union if it has the discriminant key set to one of the known member tags. Returns the value typed as the union, or `undefined` on mismatch.
+
+```ts
+const raw: unknown = JSON.parse(input)
+const m = Maybe.parse(raw)
+if (m) {
+  Maybe.match(m, {
+    Just: x => x.value,
+    Nothing: () => 0,
+  })
+}
+```
+
+This is a **shallow** check: only the discriminant is validated — field shapes are not checked. Compose with a schema library (zod, valibot, etc.) if you need deeper validation.
+
+## Property-Based Testing
+
+The `tagged-ts/fast-check` entry point generates [fast-check](https://github.com/dubzzz/fast-check) `Arbitrary` instances for your unions. `fast-check` is an optional peer dependency — you only need it installed if you import from this entry point.
+
+```ts
+import fc from 'fast-check'
+import { mkArbitrary } from 'tagged-ts/fast-check'
+
+type Nothing = { readonly tag: 'Nothing' }
+type Just<A> = { readonly tag: 'Just'; readonly value: A }
+type Maybe<A> = Just<A> | Nothing
+
+// Specify an arbitrary per field, keyed by member tag.
+// Nullary members take `{}`.
+const arbMaybe = mkArbitrary<Maybe<number>>({
+  Just: { value: fc.integer() },
+  Nothing: {},
+})
+
+fc.assert(
+  fc.property(arbMaybe, m => m.tag === 'Just' || m.tag === 'Nothing'),
+)
+```
+
+For custom discriminant keys, use `mkArbitraryCustom`:
+
+```ts
+import { mkArbitraryCustom } from 'tagged-ts/fast-check'
+
+const arbCounter = mkArbitraryCustom<CounterAction, 'type'>('type', {
+  Increment: { amount: fc.integer() },
+  Reset: {},
+})
+```
+
+The spec uses named fields for both styles — it operates on the union's underlying shape, not the constructor API. The result works equally well for unions created with either `tagged-ts/named` or `tagged-ts/positional`.
 
 ## API
 
