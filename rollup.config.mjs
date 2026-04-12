@@ -36,6 +36,14 @@ const entry = (input, outDir) => ({
     },
   ],
   plugins,
+  // Silence EMPTY_BUNDLE for the root entry: src/index.ts is types-only,
+  // so after type-stripping there is no runtime code to bundle. We still
+  // want the empty bundle emitted as a valid resolution target for
+  // `import 'tagged-ts'`.
+  onwarn(warning, warn) {
+    if (warning.code === 'EMPTY_BUNDLE') return
+    warn(warning)
+  },
 })
 
 export default [
