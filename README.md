@@ -464,4 +464,4 @@ Both modules share the same guard and match implementation internally — only t
 
 ## License
 
-MIT
+[MIT](./LICENSE)
