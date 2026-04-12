@@ -4,8 +4,8 @@ import type {
   TaggedLambda0,
   TaggedLambda1,
   TaggedLambda4,
-} from '../src'
-import { mkTaggedUnionCustom } from '../src'
+} from '../../src/positional'
+import { mkTaggedUnionCustom } from '../../src/positional'
 
 // ===========================================================================
 // Setup: Perhaps<A> (arity 1, custom discriminant '__Kind')
@@ -21,8 +21,8 @@ interface PerhapsLambda extends TaggedLambda1 {
 }
 
 const Perhaps = mkTaggedUnionCustom<PerhapsLambda>()('__Kind', {
-  Yup: true,
-  Nope: false,
+  Yup: ['value'],
+  Nope: [],
 })
 
 // ===========================================================================
@@ -46,8 +46,8 @@ interface GetResourcesForOrgActionsLambda extends TaggedLambda1 {
 
 const GetResourcesForOrgActions =
   mkTaggedUnionCustom<GetResourcesForOrgActionsLambda>()('type', {
-    GET_EVENTS: true,
-    GET_USERS: true,
+    GET_EVENTS: ['meta'],
+    GET_USERS: ['meta'],
   })
 
 // ===========================================================================
@@ -65,9 +65,9 @@ interface TrioLambda extends TaggedLambda1 {
 }
 
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
-  First: true,
-  Second: true,
-  Third: false,
+  First: ['value'],
+  Second: ['value'],
+  Third: [],
 })
 
 // ===========================================================================
@@ -84,8 +84,8 @@ interface CounterActionLambda extends TaggedLambda0 {
 }
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
-  Increment: true,
-  Reset: false,
+  Increment: ['amount'],
+  Reset: [],
 })
 
 // ===========================================================================
@@ -108,10 +108,10 @@ interface StreamLambda extends TaggedLambda4 {
 }
 
 const Stream = mkTaggedUnionCustom<StreamLambda>()('kind', {
-  Emit: true,
-  Fail: true,
-  Done: false,
-  Acquire: true,
+  Emit: ['state', 'value'],
+  Fail: ['error'],
+  Done: [],
+  Acquire: ['resource'],
 })
 
 // ===========================================================================
@@ -133,8 +133,8 @@ describe('Perhaps<A> (custom discriminant __Kind)', () => {
   })
 
   describe('constructors', () => {
-    it('builds Yup with value', () => {
-      expect(Perhaps.Yup({ value: 42 })).toEqual({ __Kind: 'Yup', value: 42 })
+    it('builds Yup with positional value', () => {
+      expect(Perhaps.Yup(42)).toEqual({ __Kind: 'Yup', value: 42 })
     })
 
     it('Nope is a plain object', () => {
@@ -143,7 +143,7 @@ describe('Perhaps<A> (custom discriminant __Kind)', () => {
   })
 
   describe('guards', () => {
-    const yup = Perhaps.Yup({ value: 0 })
+    const yup = Perhaps.Yup(0)
     const nope: Perhaps<number> = Perhaps.Nope
 
     it('correctly identifies members', () => {
@@ -163,7 +163,7 @@ describe('Perhaps<A> (custom discriminant __Kind)', () => {
 
   describe('match', () => {
     it('dispatches using the custom discriminant', () => {
-      const yup = Perhaps.Yup({ value: 99 })
+      const yup = Perhaps.Yup(99)
       const nope: Perhaps<number> = Perhaps.Nope
 
       expect(Perhaps.match(yup, { Yup: x => x.value, Nope: _x => 0 })).toBe(99)
@@ -171,7 +171,7 @@ describe('Perhaps<A> (custom discriminant __Kind)', () => {
     })
 
     it('identity handlers return the original value', () => {
-      const yup = Perhaps.Yup({ value: 42 })
+      const yup = Perhaps.Yup(42)
       expect(
         Perhaps.match(yup, {
           Yup: x => x as Perhaps<number>,
@@ -194,23 +194,23 @@ describe('Redux-style actions (discriminant type)', () => {
   })
 
   describe('constructors', () => {
-    it('injects the type discriminant', () => {
+    it('injects the type discriminant with positional args', () => {
       expect(
-        GetResourcesForOrgActions.GET_EVENTS({ meta: { orgId: 'testOrg' } }),
+        GetResourcesForOrgActions.GET_EVENTS({ orgId: 'testOrg' }),
       ).toEqual({ type: 'GET_EVENTS', meta: { orgId: 'testOrg' } })
 
-      expect(
-        GetResourcesForOrgActions.GET_USERS({ meta: { orgId: 'testOrg' } }),
-      ).toEqual({ type: 'GET_USERS', meta: { orgId: 'testOrg' } })
+      expect(GetResourcesForOrgActions.GET_USERS({ orgId: 'testOrg' })).toEqual(
+        { type: 'GET_USERS', meta: { orgId: 'testOrg' } },
+      )
     })
   })
 
   describe('guards', () => {
     const events = GetResourcesForOrgActions.GET_EVENTS({
-      meta: { orgId: 'org1' },
+      orgId: 'org1',
     })
     const users = GetResourcesForOrgActions.GET_USERS({
-      meta: { orgId: 'org1' },
+      orgId: 'org1',
     })
 
     it('correctly identifies members by type discriminant', () => {
@@ -235,7 +235,7 @@ describe('Redux-style actions (discriminant type)', () => {
   describe('match', () => {
     it('dispatches by type discriminant', () => {
       const events = GetResourcesForOrgActions.GET_EVENTS({
-        meta: { orgId: 'testOrg' },
+        orgId: 'testOrg',
       })
 
       expect(
@@ -264,16 +264,16 @@ describe('Trio<A> (custom discriminant kind)', () => {
   })
 
   describe('constructors', () => {
-    it('builds members with the kind discriminant', () => {
-      expect(Trio.First({ value: 1 })).toEqual({ kind: 'First', value: 1 })
-      expect(Trio.Second({ value: 2 })).toEqual({ kind: 'Second', value: 2 })
+    it('builds members with positional args and kind discriminant', () => {
+      expect(Trio.First(1)).toEqual({ kind: 'First', value: 1 })
+      expect(Trio.Second(2)).toEqual({ kind: 'Second', value: 2 })
       expect(Trio.Third).toEqual({ kind: 'Third' })
     })
   })
 
   describe('guards', () => {
     it('uses the kind discriminant for checking', () => {
-      const f = Trio.First({ value: 1 })
+      const f = Trio.First(1)
       const t: Trio<number> = Trio.Third
 
       expect(Trio.is.First(f)).toBe(true)
@@ -286,7 +286,7 @@ describe('Trio<A> (custom discriminant kind)', () => {
 
   describe('match', () => {
     it('dispatches by kind discriminant', () => {
-      const f = Trio.First({ value: 42 })
+      const f = Trio.First(42)
       expect(
         Trio.match(f, {
           First: x => x.value,
@@ -313,8 +313,8 @@ describe('CounterAction (arity 0, discriminant type, mixed)', () => {
   })
 
   describe('constructors', () => {
-    it('builds members correctly', () => {
-      expect(CounterAction.Increment({ amount: 5 })).toEqual({
+    it('builds members correctly with positional args', () => {
+      expect(CounterAction.Increment(5)).toEqual({
         type: 'Increment',
         amount: 5,
       })
@@ -324,7 +324,7 @@ describe('CounterAction (arity 0, discriminant type, mixed)', () => {
 
   describe('guards and match', () => {
     it('guards work with arity-0 types', () => {
-      const inc = CounterAction.Increment({ amount: 1 })
+      const inc = CounterAction.Increment(1)
       expect(CounterAction.is.Increment(inc)).toBe(true)
       expect(CounterAction.is.Reset(CounterAction.Reset)).toBe(true)
       expect(CounterAction.is.memberOfUnion(inc)).toBe(true)
@@ -332,7 +332,7 @@ describe('CounterAction (arity 0, discriminant type, mixed)', () => {
     })
 
     it('match works with arity-0 types', () => {
-      const inc = CounterAction.Increment({ amount: 7 })
+      const inc = CounterAction.Increment(7)
       expect(
         CounterAction.match(inc, {
           Increment: x => x.amount,
@@ -361,18 +361,18 @@ describe('Stream<S, R, E, A> (arity 4, custom discriminant kind)', () => {
   })
 
   describe('constructors', () => {
-    it('builds arity-4 members correctly', () => {
-      expect(Stream.Emit({ state: 's', value: 42 })).toEqual({
+    it('builds arity-4 members with positional args', () => {
+      expect(Stream.Emit('s', 42)).toEqual({
         kind: 'Emit',
         state: 's',
         value: 42,
       })
-      expect(Stream.Fail({ error: true })).toEqual({
+      expect(Stream.Fail(true)).toEqual({
         kind: 'Fail',
         error: true,
       })
       expect(Stream.Done).toEqual({ kind: 'Done' })
-      expect(Stream.Acquire({ resource: 1 })).toEqual({
+      expect(Stream.Acquire(1)).toEqual({
         kind: 'Acquire',
         resource: 1,
       })
@@ -381,7 +381,7 @@ describe('Stream<S, R, E, A> (arity 4, custom discriminant kind)', () => {
 
   describe('guards', () => {
     it('correctly identifies arity-4 members', () => {
-      const emit = Stream.Emit({ state: 's', value: 42 })
+      const emit = Stream.Emit('s', 42)
       const done: Stream<string, number, boolean, number> = Stream.Done
 
       expect(Stream.is.Emit(emit)).toBe(true)
@@ -395,7 +395,7 @@ describe('Stream<S, R, E, A> (arity 4, custom discriminant kind)', () => {
 
   describe('match', () => {
     it('dispatches arity-4 members correctly', () => {
-      const emit = Stream.Emit({ state: 's', value: 42 })
+      const emit = Stream.Emit('s', 42)
       expect(
         Stream.match(emit, {
           Emit: x => `${x.state}:${x.value}`,
@@ -414,7 +414,7 @@ describe('Stream<S, R, E, A> (arity 4, custom discriminant kind)', () => {
 
 describe('matchW with custom discriminants', () => {
   it('allows different return types with custom discriminant', () => {
-    const yup = Perhaps.Yup({ value: 42 })
+    const yup = Perhaps.Yup(42)
     const nope: Perhaps<number> = Perhaps.Nope
 
     expect(Perhaps.matchW(yup, { Yup: x => x.value, Nope: _x => 'nope' })).toBe(
@@ -426,7 +426,7 @@ describe('matchW with custom discriminants', () => {
   })
 
   it('works with arity-4 custom discriminant', () => {
-    const emit = Stream.Emit({ state: 's', value: 42 })
+    const emit = Stream.Emit('s', 42)
     expect(
       Stream.matchW(emit, {
         Emit: x => x.value,
@@ -444,7 +444,7 @@ describe('matchW with custom discriminants', () => {
 
 describe('matchOr with custom discriminants', () => {
   it('partial match with custom discriminant', () => {
-    const yup = Perhaps.Yup({ value: 42 })
+    const yup = Perhaps.Yup(42)
     const nope: Perhaps<number> = Perhaps.Nope
 
     expect(Perhaps.matchOr(yup, { Yup: x => x.value }, _otherwise => -1)).toBe(
@@ -474,7 +474,7 @@ describe('matcher / matcherW with custom discriminants', () => {
       Yup: (x: Yup<unknown>) => x.value,
       Nope: (_x: Nope) => 0,
     })
-    expect(f(Perhaps.Yup({ value: 99 }))).toBe(99)
+    expect(f(Perhaps.Yup(99))).toBe(99)
     expect(f(Perhaps.Nope as PerhapsNum)).toBe(0)
   })
 
@@ -484,7 +484,7 @@ describe('matcher / matcherW with custom discriminants', () => {
       Yup: (x: Yup<unknown>) => x.value,
       Nope: (_x: Nope) => 'nope' as const,
     })
-    expect(f(Perhaps.Yup({ value: 99 }))).toBe(99)
+    expect(f(Perhaps.Yup(99))).toBe(99)
     expect(f(Perhaps.Nope as PerhapsNum)).toBe('nope')
   })
 })

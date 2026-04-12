@@ -1,6 +1,6 @@
 {
   "name": "tagged-ts",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A tagged unions code generation library for discriminating tastes",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -16,6 +16,26 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./named": {
+      "import": {
+        "types": "./dist/named/index.d.ts",
+        "default": "./dist/named/index.js"
+      },
+      "require": {
+        "types": "./dist/named/index.d.cts",
+        "default": "./dist/named/index.cjs"
+      }
+    },
+    "./positional": {
+      "import": {
+        "types": "./dist/positional/index.d.ts",
+        "default": "./dist/positional/index.js"
+      },
+      "require": {
+        "types": "./dist/positional/index.d.cts",
+        "default": "./dist/positional/index.cjs"
+      }
     }
   },
   "files": [
@@ -24,7 +44,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts",
+    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts && cp dist/named/index.d.ts dist/named/index.d.cts && cp dist/positional/index.d.ts dist/positional/index.d.cts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

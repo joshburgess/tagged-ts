@@ -8,7 +8,7 @@
  * @since 0.3.0
  */
 
-import type { StringKeyOf } from './internal/Utils'
+import type { StringKeyOf } from './internal/Utils.js'
 
 // ---------------------------------------------------------------------------
 // Type Lambda base interfaces

@@ -6,8 +6,8 @@ import type {
   TaggedLambda1,
   TaggedLambda2,
   TaggedLambda3,
-} from '../src'
-import { mkTaggedUnion, mkTaggedUnionCustom } from '../src'
+} from '../../src/named'
+import { mkTaggedUnion, mkTaggedUnionCustom } from '../../src/named'
 
 // ---------------------------------------------------------------------------
 // Setup: Maybe<A> (arity 1, discriminant 'tag')
@@ -37,7 +37,10 @@ interface ResultLambda extends TaggedLambda2 {
   readonly data: MkData<this['type']>
 }
 
-const Result = mkTaggedUnion<ResultLambda>({ Success: true, Failure: true })
+const Result = mkTaggedUnion<ResultLambda>({
+  Success: true,
+  Failure: true,
+})
 
 // ---------------------------------------------------------------------------
 // Setup: CounterAction (arity 0, discriminant 'type')
