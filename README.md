@@ -19,36 +19,28 @@ npm install tagged-ts
 
 ## Quick Start
 
-### 1. Define your union type
-
 ```ts
+import type { MkData, TaggedLambda1 } from 'tagged-ts'
+import { mkTaggedUnion } from 'tagged-ts'
+
+// 1. Define your union type
 type Nothing = { readonly tag: 'Nothing' }
 type Just<A> = { readonly tag: 'Just'; readonly value: A }
 type Maybe<A> = Just<A> | Nothing
-```
 
-### 2. Define a type lambda
-
-```ts
-import type { MkData, TaggedLambda1 } from 'tagged-ts'
-
+// 2. Define a type lambda
 interface MaybeLambda extends TaggedLambda1 {
   readonly type: Maybe<this['A']>
   readonly data: MkData<this['type']>
 }
-```
 
-### 3. Generate the tagged union
-
-```ts
-import { mkTaggedUnion } from 'tagged-ts'
-
+// 3. Generate the tagged union
+//    true  = has fields beyond the tag (generates a function constructor)
+//    false = tag only (generates a constant value)
 const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
 ```
 
-The boolean values indicate whether each member has fields beyond the discriminant (`true` = function constructor, `false` = constant value).
-
-### 4. Use it
+### Usage
 
 ```ts
 // Constructors

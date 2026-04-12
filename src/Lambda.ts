@@ -35,6 +35,10 @@ export interface TaggedLambda0 {
  *
  * @example
  * ```ts
+ * type Nothing = { readonly tag: 'Nothing' }
+ * type Just<A> = { readonly tag: 'Just'; readonly value: A }
+ * type Maybe<A> = Just<A> | Nothing
+ *
  * interface MaybeLambda extends TaggedLambda1 {
  *   readonly type: Maybe<this['A']>
  *   readonly data: MkData<this['type']>
@@ -261,6 +265,10 @@ export type DataKeys<F extends TaggedLambda0> = StringKeyOf<F['data']>
  *
  * @example
  * ```ts
+ * type Nothing = { readonly tag: 'Nothing' }
+ * type Just<A> = { readonly tag: 'Just'; readonly value: A }
+ * type Maybe<A> = Just<A> | Nothing
+ *
  * interface MaybeLambda extends TaggedLambda1 {
  *   readonly type: Maybe<this['A']>
  *   readonly data: MkData<this['type']> // auto-computed!
@@ -270,6 +278,11 @@ export type DataKeys<F extends TaggedLambda0> = StringKeyOf<F['data']>
  * @example
  * ```ts
  * // With a custom discriminant key:
+ * type First<A> = { readonly kind: 'First'; readonly value: A }
+ * type Second<A> = { readonly kind: 'Second'; readonly value: A }
+ * type Third = { readonly kind: 'Third' }
+ * type Trio<A> = First<A> | Second<A> | Third
+ *
  * interface TrioLambda extends TaggedLambda1 {
  *   readonly type: Trio<this['A']>
  *   readonly data: MkData<this['type'], 'kind'>
