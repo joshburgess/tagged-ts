@@ -9,6 +9,9 @@
  *   - A recursive tagged union (Tree<A> contains Tree<A>)
  *   - Folding the structure via `match` to compute sum, size, and depth
  *   - In-order traversal as another `match` fold
+ *   - Pretty-printing with `show` — recurses into nested members of the same
+ *     union, so a Tree renders as `Node(Leaf, "root", Node(...))` rather
+ *     than as a raw object literal
  *
  * Positional style is handy when the field names add no real information
  * (e.g. a binary tree's left / value / right). Named style is usually
@@ -100,3 +103,15 @@ const inorder = <A>(t: Tree<A>): A[] =>
   })
 
 console.log('inorder:', inorder(tree)) // [1, 3, 4, 5, 8, 9]
+
+// ---------------------------------------------------------------------------
+// 5. Pretty-print with `show` — recurses into nested Nodes of the same union
+// ---------------------------------------------------------------------------
+
+const tiny: Tree<string> = Tree.Node(
+  Tree.Leaf,
+  'root',
+  Tree.Node(Tree.Leaf, 'right', Tree.Leaf),
+)
+console.log('show:', Tree.show(tiny))
+// Node(Leaf, "root", Node(Leaf, "right", Leaf))

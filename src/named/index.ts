@@ -254,16 +254,17 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
 
   const guardsAndMatchers = mkGuardsAndMatchers(dk, memberTags)
   const features = mkSharedFeatures(dk, memberTags)
+  const tagSet = new Set(memberTags)
 
-  const show = (a: unknown): string => {
-    if (typeof a !== 'object' || a === null) return String(a)
-    const rec = a as Record<string, unknown>
-    const tag = rec[dk]
-    const fieldKeys = Object.keys(rec).filter(k => k !== dk)
-    if (fieldKeys.length === 0) return String(tag)
-    const inner = fieldKeys.map(k => `${k}: ${formatValue(rec[k])}`).join(', ')
-    return `${String(tag)}({ ${inner} })`
-  }
+  const show = (a: unknown): string =>
+    formatValue(a, (obj, recurse) => {
+      const tag = obj[dk]
+      if (typeof tag !== 'string' || !tagSet.has(tag)) return undefined
+      const fieldKeys = Object.keys(obj).filter(k => k !== dk)
+      if (fieldKeys.length === 0) return tag
+      const inner = fieldKeys.map(k => `${k}: ${recurse(obj[k])}`).join(', ')
+      return `${tag}({ ${inner} })`
+    })
 
   return {
     ...constructors,

@@ -603,10 +603,24 @@ const deepEqualsInner = (
  * - Maps: `Map("k" => 1, "j" => 2)`
  * - Sets: `Set(1, 2, 3)`
  * - Cycles: `[Circular]` placeholder where a value refers to an ancestor
+ *   on the current traversal path (DAGs with shared references are rendered
+ *   in full — only true cycles are marked)
+ *
+ * `formatMember` lets a caller customize rendering of objects it recognizes.
+ * If provided, it is called on every non-null object before default handling;
+ * returning a string short-circuits with that output, returning `undefined`
+ * falls through to default formatting. Used by each tagged-union's `show` to
+ * recurse into nested members of the same union.
  *
  * @internal
  */
-export const formatValue = (v: unknown): string => {
+export const formatValue = (
+  v: unknown,
+  formatMember?: (
+    obj: Record<string, unknown>,
+    recurse: (x: unknown) => string,
+  ) => string | undefined,
+): string => {
   const seen = new WeakSet<object>()
   const go = (x: unknown): string => {
     if (x === null) return 'null'
@@ -628,31 +642,40 @@ export const formatValue = (v: unknown): string => {
     const obj = x as object
     if (seen.has(obj)) return '[Circular]'
     seen.add(obj)
-    if (Array.isArray(obj)) return `[${obj.map(go).join(', ')}]`
-    if (obj instanceof Date) return `Date(${JSON.stringify(obj.toISOString())})`
-    if (obj instanceof RegExp) return obj.toString()
-    if (obj instanceof Error)
-      return `${obj.name}(${JSON.stringify(obj.message)})`
-    if (obj instanceof Map) {
-      const entries = Array.from(obj.entries())
-        .map(([k, v]) => `${go(k)} => ${go(v)}`)
+    try {
+      if (formatMember !== undefined) {
+        const out = formatMember(obj as Record<string, unknown>, go)
+        if (out !== undefined) return out
+      }
+      if (Array.isArray(obj)) return `[${obj.map(go).join(', ')}]`
+      if (obj instanceof Date)
+        return `Date(${JSON.stringify(obj.toISOString())})`
+      if (obj instanceof RegExp) return obj.toString()
+      if (obj instanceof Error)
+        return `${obj.name}(${JSON.stringify(obj.message)})`
+      if (obj instanceof Map) {
+        const entries = Array.from(obj.entries())
+          .map(([k, v]) => `${go(k)} => ${go(v)}`)
+          .join(', ')
+        return `Map(${entries})`
+      }
+      if (obj instanceof Set) {
+        const values = Array.from(obj.values()).map(go).join(', ')
+        return `Set(${values})`
+      }
+      const keys = Object.keys(obj)
+      const inner = keys
+        .map(k => `${k}: ${go((obj as Record<string, unknown>)[k])}`)
         .join(', ')
-      return `Map(${entries})`
+      const proto = Object.getPrototypeOf(obj)
+      const isPlain = proto === null || proto === Object.prototype
+      if (isPlain) return keys.length === 0 ? '{}' : `{ ${inner} }`
+      const className =
+        (proto?.constructor as { name?: string } | undefined)?.name ?? 'Object'
+      return keys.length === 0 ? `${className} {}` : `${className} { ${inner} }`
+    } finally {
+      seen.delete(obj)
     }
-    if (obj instanceof Set) {
-      const values = Array.from(obj.values()).map(go).join(', ')
-      return `Set(${values})`
-    }
-    const keys = Object.keys(obj)
-    const inner = keys
-      .map(k => `${k}: ${go((obj as Record<string, unknown>)[k])}`)
-      .join(', ')
-    const proto = Object.getPrototypeOf(obj)
-    const isPlain = proto === null || proto === Object.prototype
-    if (isPlain) return keys.length === 0 ? '{}' : `{ ${inner} }`
-    const className =
-      (proto?.constructor as { name?: string } | undefined)?.name ?? 'Object'
-    return keys.length === 0 ? `${className} {}` : `${className} { ${inner} }`
   }
   return go(v)
 }

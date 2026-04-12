@@ -144,15 +144,26 @@ describe('show (named)', () => {
     ).toBe('Just({ value: "say \\"hi\\"" })')
   })
 
-  it('renders a tagged union nested inside another as a plain object', () => {
-    // Nested member is a plain object from formatValue's perspective.
+  it('recursively renders nested members of the same union', () => {
     expect(
       Maybe.show(
         Maybe.Just({
           value: Maybe.Just({ value: 1 }) as unknown as number,
         }),
       ),
-    ).toBe('Just({ value: { tag: "Just", value: 1 } })')
+    ).toBe('Just({ value: Just({ value: 1 }) })')
+  })
+
+  it('renders a tagged union from a different shape as a plain object', () => {
+    // CounterAction uses discriminant 'type' — not recognized as a Maybe
+    // member, so it renders via the generic object formatter.
+    expect(
+      Maybe.show(
+        Maybe.Just({
+          value: CounterAction.Reset as unknown as number,
+        }),
+      ),
+    ).toBe('Just({ value: { type: "Reset" } })')
   })
 
   it('renders bigint, symbol, function, -0', () => {
@@ -241,6 +252,71 @@ describe('show (named)', () => {
     expect(Maybe.show(Maybe.Just({ value: [] as unknown as number }))).toBe(
       'Just({ value: [] })',
     )
+  })
+
+  it('renders shared references (DAG) without false [Circular]', () => {
+    // Two fields point to the same object — not a cycle, both should
+    // render in full.
+    const shared = { n: 1 }
+    expect(
+      Maybe.show(
+        Maybe.Just({
+          value: { a: shared, b: shared } as unknown as number,
+        }),
+      ),
+    ).toBe('Just({ value: { a: { n: 1 }, b: { n: 1 } } })')
+  })
+
+  it('recursively pretty-prints a recursive tagged union (JsonValue)', () => {
+    type JNull = { readonly tag: 'JNull' }
+    type JBool = { readonly tag: 'JBool'; readonly value: boolean }
+    type JNum = { readonly tag: 'JNum'; readonly value: number }
+    type JArr = { readonly tag: 'JArr'; readonly items: readonly JsonValue[] }
+    type JObj = {
+      readonly tag: 'JObj'
+      readonly entries: ReadonlyArray<{
+        readonly key: string
+        readonly value: JsonValue
+      }>
+    }
+    type JsonValue = JNull | JBool | JNum | JArr | JObj
+    interface JsonLambda extends TaggedLambda0 {
+      readonly type: JsonValue
+      readonly data: MkData<this['type']>
+    }
+    const J = mkTaggedUnion<JsonLambda>({
+      JNull: false,
+      JBool: true,
+      JNum: true,
+      JArr: true,
+      JObj: true,
+    })
+    const v: JsonValue = J.JObj({
+      entries: [
+        { key: 'n', value: J.JNum({ value: 1 }) },
+        { key: 'ok', value: J.JBool({ value: true }) },
+        {
+          key: 'list',
+          value: J.JArr({ items: [J.JNum({ value: 2 }), J.JNull] }),
+        },
+      ],
+    })
+    expect(J.show(v)).toBe(
+      'JObj({ entries: [' +
+        '{ key: "n", value: JNum({ value: 1 }) }, ' +
+        '{ key: "ok", value: JBool({ value: true }) }, ' +
+        '{ key: "list", value: JArr({ items: [JNum({ value: 2 }), JNull] }) }' +
+        '] })',
+    )
+  })
+
+  it('does not flag repeated nullary singletons as [Circular]', () => {
+    // Reusing Maybe.Nothing (a nullary singleton) in multiple positions
+    // of a plain-object container must not trip cycle detection.
+    const n = Maybe.Nothing
+    expect(
+      Maybe.show(Maybe.Just({ value: { a: n, b: n } as unknown as number })),
+    ).toBe('Just({ value: { a: Nothing, b: Nothing } })')
   })
 })
 

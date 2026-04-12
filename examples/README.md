@@ -14,7 +14,7 @@ repo root, so they cannot bit-rot when the library changes.
 | --------------------------- | -------------------------------------------------------------- |
 | `01-maybe.ts`               | Basic arity-1 union, named constructors, `match` / `matchW` / `matchOr`, `show`, `tags` |
 | `02-result.ts`              | Arity-2 `Result<E, A>` for error handling; chaining with `matchW` |
-| `03-positional-tree.ts`     | Positional constructors via a recursive `Tree<A>`; folds and in-order traversal with `match` |
+| `03-positional-tree.ts`     | Positional constructors via a recursive `Tree<A>`; folds, traversal, recursive `show` |
 | `04-state-machine.ts`       | Custom discriminant key (`state`); finite-state transitions    |
 | `05-parse-and-equals.ts`    | `parse` for safely hydrating `unknown` at a boundary; `equals` for dirty-check |
 | `06-property-testing.ts`    | `mkArbitrary` + fast-check for property-based tests            |
