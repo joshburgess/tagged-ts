@@ -36,6 +36,16 @@
         "types": "./dist/positional/index.d.cts",
         "default": "./dist/positional/index.cjs"
       }
+    },
+    "./fast-check": {
+      "import": {
+        "types": "./dist/fast-check/index.d.ts",
+        "default": "./dist/fast-check/index.js"
+      },
+      "require": {
+        "types": "./dist/fast-check/index.d.cts",
+        "default": "./dist/fast-check/index.cjs"
+      }
     }
   },
   "files": [
@@ -44,7 +54,7 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rm -rf dist",
-    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts && cp dist/named/index.d.ts dist/named/index.d.cts && cp dist/positional/index.d.ts dist/positional/index.d.cts",
+    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts && cp dist/named/index.d.ts dist/named/index.d.cts && cp dist/positional/index.d.ts dist/positional/index.d.cts && cp dist/fast-check/index.d.ts dist/fast-check/index.d.cts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -74,6 +84,14 @@
     "rollup-plugin-swc3": "^0.12.1",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
+  },
+  "peerDependencies": {
+    "fast-check": "^3.0.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "fast-check": {
+      "optional": true
+    }
   },
   "keywords": [
     "union",

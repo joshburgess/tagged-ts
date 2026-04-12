@@ -448,7 +448,250 @@ export type MatcherW<
           ) => (a: ApplyType0<F>) => ReturnType<Cases[DataKeys<F>]>
 
 // ---------------------------------------------------------------------------
+// Tags (readonly list of member tag strings)
+// ---------------------------------------------------------------------------
+
+/**
+ * A readonly list of all member tag strings for a tagged union, in the
+ * order they were declared in the member spec.
+ *
+ * Useful for runtime enumeration: iterating every case, building dropdown
+ * options, generating error messages, etc.
+ *
+ * @since 0.6.0
+ */
+export type Tags<F extends TaggedLambda0> = ReadonlyArray<DataKeys<F>>
+
+// ---------------------------------------------------------------------------
+// Equals (structural deep equality)
+// ---------------------------------------------------------------------------
+
+/**
+ * Structural deep equality for two values of a tagged union.
+ *
+ * Returns `true` when both values have the same discriminant and all
+ * fields are structurally equal (recursive comparison over plain objects
+ * and arrays; primitives compared with `Object.is`).
+ *
+ * @since 0.6.0
+ */
+export type Equals<F extends TaggedLambda0> = F extends TaggedLambda4
+  ? <S, R, E, A>(
+      a: ApplyType4<F, S, R, E, A>,
+      b: ApplyType4<F, S, R, E, A>,
+    ) => boolean
+  : F extends TaggedLambda3
+    ? <R, E, A>(a: ApplyType3<F, R, E, A>, b: ApplyType3<F, R, E, A>) => boolean
+    : F extends TaggedLambda2
+      ? <E, A>(a: ApplyType2<F, E, A>, b: ApplyType2<F, E, A>) => boolean
+      : F extends TaggedLambda1
+        ? <A>(a: ApplyType1<F, A>, b: ApplyType1<F, A>) => boolean
+        : (a: ApplyType0<F>, b: ApplyType0<F>) => boolean
+
+// ---------------------------------------------------------------------------
+// Parse (shallow tag-based narrow from unknown)
+// ---------------------------------------------------------------------------
+
+/**
+ * Shallow parser that narrows an `unknown` value to the tagged union if it
+ * has the discriminant key set to one of the known member tags.
+ *
+ * This is a *shallow* check: only the discriminant is validated — field
+ * shapes are **not** checked. Compose with a schema library
+ * (zod, valibot, etc.) if you need deeper validation.
+ *
+ * @since 0.6.0
+ */
+export type Parse<F extends TaggedLambda0> = F extends TaggedLambda4
+  ? <S, R, E, A>(x: unknown) => ApplyType4<F, S, R, E, A> | undefined
+  : F extends TaggedLambda3
+    ? <R, E, A>(x: unknown) => ApplyType3<F, R, E, A> | undefined
+    : F extends TaggedLambda2
+      ? <E, A>(x: unknown) => ApplyType2<F, E, A> | undefined
+      : F extends TaggedLambda1
+        ? <A>(x: unknown) => ApplyType1<F, A> | undefined
+        : (x: unknown) => ApplyType0<F> | undefined
+
+// ---------------------------------------------------------------------------
 // Shared runtime
+// ---------------------------------------------------------------------------
+
+/**
+ * Structural deep equality used by generated `equals`.
+ *
+ * - Primitives compared with `Object.is` (so `NaN === NaN`)
+ * - Arrays compared element-wise (same length)
+ * - Plain objects compared by own enumerable keys (same set)
+ * - All other object types (Map, Set, Date, class instances, etc.)
+ *   compared with `Object.is` (reference equality)
+ * - Cyclic structures handled coinductively: if we encounter a pair
+ *   (a, b) already on the comparison stack, we assume them equal. This
+ *   means two self-referential structures with the same shape return
+ *   `true` instead of stack-overflowing.
+ *
+ * @internal
+ */
+export const deepEquals = (a: unknown, b: unknown): boolean =>
+  deepEqualsInner(a, b, new WeakMap())
+
+const deepEqualsInner = (
+  a: unknown,
+  b: unknown,
+  seen: WeakMap<object, WeakSet<object>>,
+): boolean => {
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object') return false
+  if (a === null || b === null) return false
+
+  // Cycle guard: if we're already comparing this (a, b) pair further up
+  // the stack, coinductively assume they're equal. Without this, cyclic
+  // structures would recurse forever.
+  const seenForA = seen.get(a as object)
+  if (seenForA?.has(b as object)) return true
+  if (seenForA) seenForA.add(b as object)
+  else seen.set(a as object, new WeakSet([b as object]))
+
+  if (Array.isArray(a)) {
+    if (!Array.isArray(b) || a.length !== b.length) return false
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqualsInner(a[i], b[i], seen)) return false
+    }
+    return true
+  }
+  if (Array.isArray(b)) return false
+  // Only treat plain objects as structurally comparable. Non-plain objects
+  // (Map, Set, Date, class instances with custom prototypes) fall through to
+  // reference equality, which Object.is already handled above.
+  const protoA = Object.getPrototypeOf(a)
+  const protoB = Object.getPrototypeOf(b)
+  if (
+    (protoA !== Object.prototype && protoA !== null) ||
+    (protoB !== Object.prototype && protoB !== null)
+  ) {
+    return false
+  }
+  const ak = Object.keys(a as object)
+  const bk = Object.keys(b as object)
+  if (ak.length !== bk.length) return false
+  for (const k of ak) {
+    if (!Object.hasOwn(b as object, k)) return false
+    if (
+      !deepEqualsInner(
+        (a as Record<string, unknown>)[k],
+        (b as Record<string, unknown>)[k],
+        seen,
+      )
+    )
+      return false
+  }
+  return true
+}
+
+/**
+ * Format an arbitrary value for inclusion in a `show` output string.
+ *
+ * Produces readable output similar to `util.inspect`:
+ *
+ * - Primitives: `42`, `true`, `null`, `undefined`, `"hi"`, `42n`, `Symbol(x)`
+ * - Functions: `[Function: name]`
+ * - Arrays: `[1, 2, 3]`
+ * - Plain objects: `{ key: value }`
+ * - Class instances: `ClassName { field: value }`
+ * - Dates: `Date("2024-01-01T00:00:00.000Z")`
+ * - RegExps: `/pattern/flags`
+ * - Errors: `TypeError("message")`
+ * - Maps: `Map("k" => 1, "j" => 2)`
+ * - Sets: `Set(1, 2, 3)`
+ * - Cycles: `[Circular]` placeholder where a value refers to an ancestor
+ *
+ * @internal
+ */
+export const formatValue = (v: unknown): string => {
+  const seen = new WeakSet<object>()
+  const go = (x: unknown): string => {
+    if (x === null) return 'null'
+    if (x === undefined) return 'undefined'
+    const t = typeof x
+    if (t === 'string') return JSON.stringify(x)
+    if (t === 'number') {
+      // Preserve -0 which String() would render as "0"
+      return Object.is(x, -0) ? '-0' : String(x)
+    }
+    if (t === 'boolean') return String(x)
+    if (t === 'bigint') return `${String(x)}n`
+    if (t === 'symbol') return (x as symbol).toString()
+    if (t === 'function') {
+      const name = (x as { name?: string }).name
+      return name ? `[Function: ${name}]` : '[Function]'
+    }
+    // From here on, x is a non-null object.
+    const obj = x as object
+    if (seen.has(obj)) return '[Circular]'
+    seen.add(obj)
+    if (Array.isArray(obj)) return `[${obj.map(go).join(', ')}]`
+    if (obj instanceof Date) return `Date(${JSON.stringify(obj.toISOString())})`
+    if (obj instanceof RegExp) return obj.toString()
+    if (obj instanceof Error)
+      return `${obj.name}(${JSON.stringify(obj.message)})`
+    if (obj instanceof Map) {
+      const entries = Array.from(obj.entries())
+        .map(([k, v]) => `${go(k)} => ${go(v)}`)
+        .join(', ')
+      return `Map(${entries})`
+    }
+    if (obj instanceof Set) {
+      const values = Array.from(obj.values()).map(go).join(', ')
+      return `Set(${values})`
+    }
+    const keys = Object.keys(obj)
+    const inner = keys
+      .map(k => `${k}: ${go((obj as Record<string, unknown>)[k])}`)
+      .join(', ')
+    const proto = Object.getPrototypeOf(obj)
+    const isPlain = proto === null || proto === Object.prototype
+    if (isPlain) return keys.length === 0 ? '{}' : `{ ${inner} }`
+    const className =
+      (proto?.constructor as { name?: string } | undefined)?.name ?? 'Object'
+    return keys.length === 0 ? `${className} {}` : `${className} { ${inner} }`
+  }
+  return go(v)
+}
+
+/**
+ * Build the shared (style-agnostic) runtime features: tags, equals, parse.
+ * Used by both named and positional modules.
+ *
+ * @internal
+ */
+export const mkSharedFeatures = (
+  dk: string,
+  memberTags: string[],
+): {
+  tags: readonly string[]
+  equals: (a: unknown, b: unknown) => boolean
+  parse: (x: unknown) => unknown
+} => {
+  const tags = Object.freeze([...memberTags])
+  const tagSet = new Set(memberTags)
+
+  const equals = (a: unknown, b: unknown): boolean => deepEquals(a, b)
+
+  const parse = (x: unknown): unknown => {
+    if (typeof x !== 'object' || x === null) return undefined
+    if (Array.isArray(x)) return undefined
+    // Require an *own* discriminant key. Prevents Object.create-based
+    // prototype pollution from passing as a valid union member.
+    if (!Object.hasOwn(x, dk)) return undefined
+    const tag = (x as Record<string, unknown>)[dk]
+    if (typeof tag !== 'string' || !tagSet.has(tag)) return undefined
+    return x
+  }
+
+  return { tags, equals, parse }
+}
+
+// ---------------------------------------------------------------------------
+// Guards and matchers runtime
 // ---------------------------------------------------------------------------
 
 /**

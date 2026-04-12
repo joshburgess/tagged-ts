@@ -12,6 +12,7 @@
  */
 
 import type {
+  Equals,
   Guards,
   Match,
   Matcher,
@@ -20,8 +21,14 @@ import type {
   MatchW,
   MemberShape,
   NullaryConstructor,
+  Parse,
+  Tags,
 } from '../internal/shared.js'
-import { mkGuardsAndMatchers } from '../internal/shared.js'
+import {
+  formatValue,
+  mkGuardsAndMatchers,
+  mkSharedFeatures,
+} from '../internal/shared.js'
 import type { StringKeyOf } from '../internal/Utils.js'
 import type {
   ApplyData0,
@@ -43,12 +50,15 @@ import type {
 } from '../Lambda.js'
 
 export type {
+  Equals,
   Guards,
   Match,
   Matcher,
   MatcherW,
   MatchOr,
   MatchW,
+  Parse,
+  Tags,
 } from '../internal/shared.js'
 // Re-export shared types for single-import convenience
 export type {
@@ -215,11 +225,34 @@ export type Constructors<
 }
 
 // ---------------------------------------------------------------------------
+// Show (positional formatter)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pretty-printer for a tagged union (positional style).
+ *
+ * Produces `"Tag(value1, value2)"` for non-nullary members (values in the
+ * declared order from the member spec) and just `"Tag"` for nullary
+ * members. Field values are formatted with `JSON.stringify`.
+ *
+ * @since 0.6.0
+ */
+export type Show<F extends TaggedLambda0> = F extends TaggedLambda4
+  ? <S, R, E, A>(a: ApplyType4<F, S, R, E, A>) => string
+  : F extends TaggedLambda3
+    ? <R, E, A>(a: ApplyType3<F, R, E, A>) => string
+    : F extends TaggedLambda2
+      ? <E, A>(a: ApplyType2<F, E, A>) => string
+      : F extends TaggedLambda1
+        ? <A>(a: ApplyType1<F, A>) => string
+        : (a: ApplyType0<F>) => string
+
+// ---------------------------------------------------------------------------
 // TaggedUnion result type
 // ---------------------------------------------------------------------------
 
 /**
- * The combined result: constructors + guards + match variants.
+ * The combined result: constructors + guards + match variants + utilities.
  *
  * @since 0.5.0
  */
@@ -237,6 +270,10 @@ export type TaggedUnion<
   readonly matchOr: MatchOr<F, DiscriminantKey>
   readonly matcher: Matcher<F, DiscriminantKey>
   readonly matcherW: MatcherW<F, DiscriminantKey>
+  readonly tags: Tags<F>
+  readonly show: Show<F>
+  readonly equals: Equals<F>
+  readonly parse: Parse<F>
 }
 
 // ---------------------------------------------------------------------------
@@ -252,8 +289,11 @@ const mkTaggedUnionImpl = <
   members: Spec,
 ): TaggedUnion<F, DK, Spec> => {
   const constructors: Record<string, unknown> = {}
+  const memberTags = Object.keys(members)
+  const fieldOrder: Record<string, readonly string[]> = {}
 
   for (const [memberTag, fieldNames] of Object.entries(members)) {
+    fieldOrder[memberTag] = fieldNames
     const discriminantPair = { [dk]: memberTag }
     if (fieldNames.length === 0) {
       constructors[memberTag] = discriminantPair
@@ -268,9 +308,25 @@ const mkTaggedUnionImpl = <
     }
   }
 
-  const shared = mkGuardsAndMatchers(dk, Object.keys(members))
+  const guardsAndMatchers = mkGuardsAndMatchers(dk, memberTags)
+  const features = mkSharedFeatures(dk, memberTags)
 
-  return { ...constructors, ...shared } as unknown as TaggedUnion<F, DK, Spec>
+  const show = (a: unknown): string => {
+    if (typeof a !== 'object' || a === null) return String(a)
+    const rec = a as Record<string, unknown>
+    const tag = rec[dk]
+    const orderedFields = fieldOrder[tag as string] ?? []
+    if (orderedFields.length === 0) return String(tag)
+    const inner = orderedFields.map(k => formatValue(rec[k])).join(', ')
+    return `${String(tag)}(${inner})`
+  }
+
+  return {
+    ...constructors,
+    ...guardsAndMatchers,
+    ...features,
+    show,
+  } as unknown as TaggedUnion<F, DK, Spec>
 }
 
 // ---------------------------------------------------------------------------
