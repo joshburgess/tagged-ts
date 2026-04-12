@@ -1,298 +1,240 @@
 # tagged-ts
 
-A tagged unions code generation library for *discriminating* tastes
+Type-safe tagged unions with generated constructors, guards, and pattern matching for TypeScript.
 
 ## Installation
 
-Install with `npm install tagged-ts` or `yarn add tagged-ts`
+```sh
+npm install tagged-ts
+```
 
-## Key Features
+## Features
 
-### 1. Works with  **polymorphic type constructors**
+- **Polymorphic type constructors** — works with generic union types like `Maybe<A>`, `Result<E, A>`, and beyond (up to 4 type parameters)
+- **Nullary constructors as constants** — `Maybe.Nothing` is a plain value, not a thunk
+- **Custom discriminant keys** — use `'tag'`, `'type'`, `'kind'`, or any string
+- **Type guards** — per-member guards that narrow the union, plus a `memberOfUnion` guard
+- **Pattern matching** — exhaustive `match`, widened `matchW`, partial `matchOr`, and curried `matcher`/`matcherW` variants
+- **Union return types** — constructors return the full union type (e.g. `Maybe<A>`), forcing pattern matching for safe access
 
-As far as I'm aware, this is currently the only TypeScript code generation library of this kind that fully supports working with union types using generics.
+## Quick Start
 
-This means you can generate constructors, guards, a function simulating pattern matching, etc. for types like
+### 1. Define your union type
 
 ```ts
+type Nothing = { readonly tag: 'Nothing' }
+type Just<A> = { readonly tag: 'Just'; readonly value: A }
 type Maybe<A> = Just<A> | Nothing
 ```
 
-and
+### 2. Define a type lambda
 
 ```ts
-type Result<E, A> = Failure<E> | Success<A>
+import type { MkData, TaggedLambda1 } from 'tagged-ts'
+
+interface MaybeLambda extends TaggedLambda1 {
+  readonly type: Maybe<this['A']>
+  readonly data: MkData<this['type']>
+}
 ```
 
-without specializing the generic type params upon generation.
+### 3. Generate the tagged union
 
-The generated utility functions will automatically have roughly the same type signatures that you'd write if you were defining them manually.
+```ts
+import { mkTaggedUnion } from 'tagged-ts'
 
-This means less boilerplate & less repetition in your codebase.
+const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+```
 
-### 2. Supports modeling nullary data constructors as constants
+The boolean values indicate whether each member has fields beyond the discriminant (`true` = function constructor, `false` = constant value).
 
-Most libraries of this kind represent nullary data constructors, those which take no arguments, as thunks, functions which take no arguments and return the type of the tagged union. This isn't the end of the world, but these libraries use thunks instead of constants only because it's much easier to generate thunks, and it requires less run-time information.
+### 4. Use it
 
-However, most libraries offering hand written sum types model nullary constructors as constants, because this is both more convenient and more similar to what you find in languages that feature tagged unions as a native feature, like Haskell, PureScript, Elm, ReasonML/OCaml, F#, etc....
+```ts
+// Constructors
+const j = Maybe.Just({ value: 42 })  // Maybe<number>
+const n = Maybe.Nothing               // Maybe<never>
 
-I think using constants is more ideal, and `tagged-ts` allows you to.
+// Type guards
+if (Maybe.is.Just(j)) {
+  console.log(j.value) // narrowed to Just<number>
+}
+Maybe.is.memberOfUnion(j) // true
+Maybe.is.memberOfUnion({ other: 'thing' }) // false
 
-### 3. Configurable
+// Pattern matching
+Maybe.match(j, {
+  Just: x => x.value,
+  Nothing: _x => 0,
+}) // 42
+```
 
-While many people are happy with a one-size-fits-all approach for libraries like this, others desire more configurability. `tagged-ts` offers a few sensible default functions to select from as well as a more configurable function for customization.
+## API
 
-Quick notes on each of the available generation functions:
+### `mkTaggedUnion<F>(members)`
 
-- `mkTaggedUnion`
+Generates constructors, guards, and match functions for a tagged union using `'tag'` as the discriminant key.
 
-  - The default, go-to generation function provided by the library
-  - Discriminant key: `'tag'`
-  - Nullary constructors mode: `'constant'`
-  - Use `mkTaggedUnionBasic` instead if you're okay with nullary constructors being functions instead of constants and/or you desire less boilerplate
+```ts
+const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+```
 
-- `mkTaggedUnionBasic`
+### `mkTaggedUnionCustom<F>()(discriminant, members)`
 
-  - An alternate version of `mkTaggedUnion` which represents nullary constructors as functions (thunks) instead of constants, requiring less boilerplate
-  - Discriminant key: `'tag'`
-  - Nullary constructors mode: `'thunk'`
+Same as `mkTaggedUnion`, but with a custom discriminant key. Uses a double-call pattern so TypeScript can infer the key type.
 
-- `mkTaggedUnionRedux`
+```ts
+type Increment = { readonly type: 'Increment'; readonly amount: number }
+type Reset = { readonly type: 'Reset' }
+type CounterAction = Increment | Reset
 
-  - A generation function preconfigured to the right defaults for working with Redux-style actions & action creators
-  - Discriminant key: `'type'`
-  - Nullary constructors mode: `'thunk'`
+interface CounterActionLambda extends TaggedLambda0 {
+  readonly type: CounterAction
+  readonly data: MkData<this['type'], 'type'>
+}
 
-- `mkTaggedUnionCustom`
+const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
+  Increment: true,
+  Reset: false,
+})
+```
 
-  - The most configurable version of this function offered by the library, most useful to those who don't mind passing in a config each time & want maximum flexibility
-  - Discriminant key: Whatever string you want to use (Configurable)
-  - Nullary constructors mode: `'constant' | 'thunk'` (Configurable)
+### Match Variants
+
+#### `match(value, handlers)` — Exhaustive pattern match
+
+All cases must be handled. All handlers must return the same type.
+
+```ts
+Maybe.match(value, {
+  Just: x => x.value,
+  Nothing: _x => 0,
+})
+```
+
+#### `matchW(value, handlers)` — Widened return type
+
+Like `match`, but each handler can return a different type. The result is the union of all handler return types.
+
+```ts
+Maybe.matchW(value, {
+  Just: x => x.value,     // number
+  Nothing: _x => 'none',  // string
+}) // number | string
+```
+
+#### `matchOr(value, handlers, otherwise)` — Partial match with default
+
+Only provide handlers for the cases you care about. Unmatched cases fall through to the default.
+
+```ts
+Maybe.matchOr(
+  value,
+  { Just: x => x.value },
+  _otherwise => 0,
+)
+```
+
+#### `matcher(handlers)` — Curried data-last match
+
+Returns a reusable function. Designed for use in pipelines / function composition.
+
+```ts
+const extractValue = Maybe.matcher<number, number>({
+  Just: x => x.value,
+  Nothing: _x => 0,
+})
+
+// Use in a pipeline
+extractValue(Maybe.Just({ value: 42 })) // 42
+```
+
+#### `matcherW(handlers)` — Curried data-last widened match
+
+Like `matcher`, but each handler can return a different type.
+
+### Type Guards
+
+Each generated union has an `is` namespace containing:
+
+- **Per-member guards** — `Maybe.is.Just(x)`, `Maybe.is.Nothing(x)` — narrow the type
+- **`memberOfUnion(x)`** — checks whether a value belongs to the union at all
+
+### MemberSpec
+
+The boolean object passed to `mkTaggedUnion` / `mkTaggedUnionCustom` is constrained by the `MemberSpec` type:
+
+- `true` = the member has fields beyond the discriminant key (generates a function constructor)
+- `false` = the member has only the discriminant key (generates a constant value)
+
+TypeScript enforces the correct mapping — you can't mark a member with extra fields as `false` or a nullary member as `true`.
+
+## Higher Arities
+
+tagged-ts supports union types with 0 to 4 type parameters via `TaggedLambda0` through `TaggedLambda4`:
+
+| Lambda | Kind | Type params | Slots |
+|--------|------|-------------|-------|
+| `TaggedLambda0` | `*` | 0 | — |
+| `TaggedLambda1` | `* -> *` | 1 | `A` |
+| `TaggedLambda2` | `* -> * -> *` | 2 | `E`, `A` |
+| `TaggedLambda3` | `* -> * -> * -> *` | 3 | `R`, `E`, `A` |
+| `TaggedLambda4` | `* -> * -> * -> * -> *` | 4 | `S`, `R`, `E`, `A` |
+
+### Arity-2 Example: `Result<E, A>`
+
+```ts
+import type { MkData, TaggedLambda2 } from 'tagged-ts'
+import { mkTaggedUnion } from 'tagged-ts'
+
+type Failure<E> = { readonly tag: 'Failure'; readonly error: E }
+type Success<A> = { readonly tag: 'Success'; readonly value: A }
+type Result<E, A> = Success<A> | Failure<E>
+
+interface ResultLambda extends TaggedLambda2 {
+  readonly type: Result<this['E'], this['A']>
+  readonly data: MkData<this['type']>
+}
+
+const Result = mkTaggedUnion<ResultLambda>({ Success: true, Failure: true })
+
+Result.Success({ value: 42 })     // Result<unknown, number>
+Result.Failure({ error: 'oops' }) // Result<string, unknown>
+```
+
+### Arity-4 Example: `Stream<S, R, E, A>`
+
+```ts
+import type { MkData, TaggedLambda4 } from 'tagged-ts'
+import { mkTaggedUnion } from 'tagged-ts'
+
+type Emit<S, A> = { readonly tag: 'Emit'; readonly state: S; readonly value: A }
+type Fail<E> = { readonly tag: 'Fail'; readonly error: E }
+type Done = { readonly tag: 'Done' }
+type Acquire<R> = { readonly tag: 'Acquire'; readonly resource: R }
+type Stream<S, R, E, A> = Emit<S, A> | Fail<E> | Done | Acquire<R>
+
+interface StreamLambda extends TaggedLambda4 {
+  readonly type: Stream<this['S'], this['R'], this['E'], this['A']>
+  readonly data: MkData<this['type']>
+}
+
+const Stream = mkTaggedUnion<StreamLambda>({
+  Emit: true,
+  Fail: true,
+  Done: false,
+  Acquire: true,
+})
+```
 
 ## How It Works
 
-Fully supporting polymorphic type constructors and correctly propagating the generic type params through all layers of the code generation without losing type information is difficult. In fact, I don't think it's possible to support sum types that take more than a single type param using the conventional techniques employed by other tagged unions libraries.
+tagged-ts uses **type lambdas** to simulate higher-kinded types in TypeScript. Instead of a global registry with declaration merging, you define a local interface that extends `TaggedLambda1` (or the appropriate arity) and overrides `type` and `data` using `this`-based type parameter slots.
 
-The trick to making it work is taking a page out of the [`fp-ts`](https://github.com/gcanti/fp-ts) playbook and using type-level maps and "Declaration Merging" (Module Augmentation & Interface Merging) to our advantage. Declaration Merging: [https://www.typescriptlang.org/docs/handbook/declaration-merging.html](https://www.typescriptlang.org/docs/handbook/declaration-merging.html)
+`MkData<T, DK>` auto-generates the data constructor map from your union type — it uses `Extract` and mapped types to produce a record mapping each discriminant value to its corresponding union member. This eliminates the need to manually write the data map.
 
-In `fp-ts`, the modification of type-level maps is used to facilitate a sort of type system hack that allows TypeScript to model higher kinded types & higher kinded polymorphism. For those familiar with ReasonML/OCaml, this technique is very similar to the approach using "open"/extensible GADTs outlined in the ["Lightweight higher-kinded polymorphism"](https://www.cl.cam.ac.uk/~jdy22/papers/lightweight-higher-kinded-polymorphism.pdf) paper.
+At runtime, `mkTaggedUnion` and `mkTaggedUnionCustom` read the boolean member spec to generate constructors (functions for `true`, frozen objects for `false`), type guards, and pattern matching functions. The types ensure full type safety across all of these.
 
-In `tagged-ts`, the type-level maps represent a mapping from a unique identifier, a string or symbol, to a type constructor specification, referred to as a `Spec` in the source code. This allows us to correctly plumb generics through all the internal machinery of the library. There are 5 type-level maps in total, one for each Kind:
+## License
 
-```ts
-/**
- * A type-level Map for nullary type constructors,
- *
- * or, in other words, those of kind: `*`
- *
- * @since 0.2.0
- */
-export interface TypeConstructorRegistry0 {}
-
-/**
- * A type-level Map for type constructors taking 1 type param,
- *
- * or, in other words, those of kind: `* -> *`
- *
- * @since 0.2.0
- */
-export interface TypeConstructorRegistry1<A> {}
-
-/**
- * A type-level Map for type constructors taking 2 type params,
- *
- * or, in other words, those of kind: `* -> * -> *`
- *
- * @since 0.2.0
- */
-export interface TypeConstructorRegistry2<E, A> {}
-
-/**
- * A type-level Map for type constructors taking 3 type params,
- *
- * or, in other words, those of kind: `* -> * -> * -> *`
- *
- * @since 0.2.0
- */
-export interface TypeConstructorRegistry3<R, E, A> {}
-
-/**
- * A type-level Map for type constructors taking 4 type params,
- *
- * or, in other words, those of kind: `* -> * -> * -> * -> *`
- *
- * @since 0.2.0
- */
-export interface TypeConstructorRegistry4<S, R, E, A> {}
-
-/**
- * A union of all type constructor registries
- *
- * @since 0.2.0
- */
-export type TypeConstructorRegistry =
-  | TypeConstructorRegistry0
-  | TypeConstructorRegistry1<unknown>
-  | TypeConstructorRegistry2<unknown, unknown>
-  | TypeConstructorRegistry3<unknown, unknown, unknown>
-  | TypeConstructorRegistry4<unknown, unknown, unknown, unknown>
-```
-
-We use declaration merging to add new type constructor `Specs` to the appropriate `TypeConstructorRegistry` type-level map.
-
-Here's an example of what constructing the `Spec` for `Maybe<A>` and adding it to `TypeConstructorRegistry1<A>`  would look like:
-
-```ts
-import { TypeConstructorRegistry1 } from 'tagged-ts/lib/Registry'
-
-type Nothing = { readonly tag: 'Nothing' }
-type Just<A> = {
-  readonly tag: 'Just'
-  readonly value: A
-}
-type Maybe<A> = Just<A> | Nothing
-
-interface MaybeSpec<A> {
-  readonly type: Maybe<A>
-  readonly data: {
-    readonly Just: Just<A>
-    readonly Nothing: Nothing
-  }
-}
-
-declare module 'tagged-ts/lib/Registry' {
-  interface TypeConstructorRegistry1<A> {
-    readonly Maybe: MaybeSpec<A>
-  }
-}
-```
-
-Alternatively, instead of writing the `Spec` by hand, we can construct the `Spec` using the `MkTypeConstructorSpec` type-level utility, which will not allow you to make a mistake.
-
-```ts
-import { MkTypeConstructorSpec } from 'tagged-ts/lib/Registry'
-
-type MaybeSpec<A> = MkTypeConstructorSpec<
-  // gets assigned to the `type` field of the spec
-  Maybe<A>,
-  // used to ensure the correct types are being passed in the next type param
-  'tag',
-  // gets assigned to the `data` field of the spec
-  {
-    readonly Just: Just<A>
-    readonly Nothing: Nothing
-  }
->
-```
-
-After adding an entry to the appropriate registry, we can use the generation functions.
-
-Example of using the default `mkTaggedUnion`:
-
-```ts
-import { __, mkTaggedUnion } from 'tagged-ts'
-
-// `__` is used as a general purpose placeholder for when keys are needed at
-// run-time, but values are not
-export const Maybe = mkTaggedUnion<'Maybe'>()({
-  Just: { tag: __, value: __ },
-  Nothing: { tag: __ },
-})
-
-// annotation required because Maybe.Nothing could be assigned to any Maybe<A>
-const numMayA: Maybe<number> = Maybe.Nothing
-
-// const numMayB: Maybe<number>
-const numMayB = Maybe.Just({ value: 0 })
-
-// Maybe.Just inference before called
-// (property) Just: <A>(fields: {
-//     readonly value: A;
-// }) => Maybe<A>
-
-// Maybe.Just inference after given value
-// (property) Just: <number>(fields: {
-//     readonly value: number;
-// }) => Maybe<number>
-```
-
-Instead, we could use the more configurable `mkTaggedCustom`. Example:
-
-```ts
-import { __, mkTaggedUnionCustom, thunk } from 'tagged-ts'
-import { TypeConstructorRegistry1 } from 'tagged-ts/lib/Registry'
-
-// using '__TYPE__' as the discriminant key now
-type Nope = { readonly __TYPE__: 'Nope' }
-type Yup<A> = {
-  readonly __TYPE__: 'Yup'
-  readonly value: A
-}
-type Perhaps<A> = Yup<A> | Nope
-
-type PerhapsSpec<A> = MkTypeConstructorSpec<
-  Perhaps<A>,
-  '__TYPE__',
-  {
-    readonly Yup: Yup<A>
-    readonly Nope: Nope
-  }
->
-
-declare module 'tagged-ts/lib/Registry' {
-  interface TypeConstructorRegistry1<A> {
-    readonly Perhaps: PerhapsSpec<A>
-  }
-}
-
-// configure discriminant key & nullary constructors mode
-const customConfig = {
-  discriminantKey: '__TYPE__',
-  nullaryConstructorsMode: thunk // or just 'thunk' written manually,
-} as const
-
-// less boilerplate run-time information is needed in 'thunk' mode
-export const Perhaps = mkTaggedUnionCustom<'Perhaps'>()(customConfig, {
-  Yup: __,
-  Nope: __,
-})
-
-// nullary constructors are thunks now
-// perhapsA: Perhaps<string>
-const perhapsA = Perhaps.Nope<string>()
-
-// perhapsB: Perhaps<string>
-const perhapsB = Perhaps.Yup({ value: 'indeed' })
-```
-
-Examples of using the other functions generated for you:
-
-```ts
-// Using the `match` function:
-// const transformed: { result: number }
-const transformed = Perhaps.match(perhapsB, {
-  Nope: () => ({ result: 0 }),
-  Yup: ({ value }) => ({ result: value.length }),
-})
-
-// Using type guards:
-// const yes: boolean
-const yes = Perhaps.is.Nope(perhapsA)
-// const no: boolean
-const no = Perhaps.is.Yup(perhapsA)
-// const alsoNo: boolean
-const alsoNo = Perhaps.is.memberOfUnion({ somethingElse: 'unknown' })
-```
-
-## Generated Docs
-
-Like the `fp-ts` ecosystem libraries, this library is using [`doc-ts`](https://github.com/gcanti/docs-ts) to generate documentation from JSDoc comments in the source code. These generated docs are not currently being hosted anywhere, but they are availble in the `docs` directory. I may host them somewhere in the future.
-
-Generated docs:
-
-- [Main API](https://github.com/joshburgess/tagged-ts/blob/master/docs/modules/index.ts.md)
-- [Registry API](https://github.com/joshburgess/tagged-ts/blob/master/docs/modules/Registry.ts.md)
-
-## Coming Soon
-
-Better documentation and more features are coming soon.
+MIT
