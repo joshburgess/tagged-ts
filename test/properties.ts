@@ -22,7 +22,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
+const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
 
 // ---------------------------------------------------------------------------
 // Setup: Result<E, A> (arity 2, discriminant 'tag')
@@ -57,7 +57,7 @@ interface CounterActionLambda extends TaggedLambda0 {
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
   Increment: ['amount'],
-  Reset: false,
+  Reset: [],
 })
 
 // ---------------------------------------------------------------------------
@@ -77,7 +77,7 @@ interface TrioLambda extends TaggedLambda1 {
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
   First: ['value'],
   Second: ['value'],
-  Third: false,
+  Third: [],
 })
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ const Env = mkTaggedUnion<EnvLambda>()({
   Ask: ['resource'],
   Pure: ['value'],
   Raise: ['error'],
-  Halt: false,
+  Halt: [],
 })
 
 // ===========================================================================

@@ -22,7 +22,7 @@ interface PerhapsLambda extends TaggedLambda1 {
 
 const Perhaps = mkTaggedUnionCustom<PerhapsLambda>()('__Kind', {
   Yup: ['value'],
-  Nope: false,
+  Nope: [],
 })
 
 // ===========================================================================
@@ -67,7 +67,7 @@ interface TrioLambda extends TaggedLambda1 {
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
   First: ['value'],
   Second: ['value'],
-  Third: false,
+  Third: [],
 })
 
 // ===========================================================================
@@ -85,7 +85,7 @@ interface CounterActionLambda extends TaggedLambda0 {
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
   Increment: ['amount'],
-  Reset: false,
+  Reset: [],
 })
 
 // ===========================================================================
@@ -110,7 +110,7 @@ interface StreamLambda extends TaggedLambda4 {
 const Stream = mkTaggedUnionCustom<StreamLambda>()('kind', {
   Emit: ['state', 'value'],
   Fail: ['error'],
-  Done: false,
+  Done: [],
   Acquire: ['resource'],
 })
 

@@ -20,7 +20,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
+const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
 
 // ===========================================================================
 // Setup: Result<E, A> (arity 2, all non-nullary)
@@ -58,7 +58,7 @@ interface MaybeNestedLambda extends TaggedLambda1 {
 
 const MaybeNested = mkTaggedUnion<MaybeNestedLambda>()({
   JustNested: ['value'],
-  NothingNested: false,
+  NothingNested: [],
 })
 
 // ===========================================================================
@@ -104,7 +104,7 @@ const Env = mkTaggedUnion<EnvLambda>()({
   Ask: ['resource'],
   Pure: ['value'],
   Raise: ['error'],
-  Halt: false,
+  Halt: [],
 })
 
 // ===========================================================================

@@ -62,12 +62,12 @@ type MemberShape<F extends TaggedLambda0, K extends DataKeys<F>> = F['data'][K &
  *
  * - `['field1', 'field2', ...]` = has fields beyond the discriminant key ->
  *   function constructor with positional args in the specified order
- * - `false` = no fields beyond the discriminant key -> constant value
+ * - `[]` = no fields beyond the discriminant key -> constant value
  *
  * @example
  * ```ts
  * // Just<A> has `value`, Nothing has no extra fields
- * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: ['value'], Nothing: false })
+ * const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
  *
  * Maybe.Just(42)  // positional arg
  * Maybe.Nothing   // constant value
@@ -77,7 +77,7 @@ type MemberShape<F extends TaggedLambda0, K extends DataKeys<F>> = F['data'][K &
  */
 export type MemberSpec<F extends TaggedLambda0, DK extends string = 'tag'> = {
   [K in DataKeys<F>]: {} extends Omit<MemberShape<F, K>, DK>
-    ? false
+    ? readonly []
     : readonly StringKeyOf<Omit<MemberShape<F, K>, DK>>[]
 }
 
@@ -174,12 +174,10 @@ type ConstructorFor<
   F extends TaggedLambda0,
   K extends DataKeys<F>,
   DiscriminantKey extends string,
-  SpecEntry extends false | readonly string[],
-> = SpecEntry extends false
+  SpecEntry extends readonly string[],
+> = SpecEntry extends readonly []
   ? NullaryConstructor<F>
-  : SpecEntry extends readonly string[]
-    ? NonNullaryConstructor<F, K, DiscriminantKey, SpecEntry>
-    : never
+  : NonNullaryConstructor<F, K, DiscriminantKey, SpecEntry>
 
 // ---------------------------------------------------------------------------
 // Constructors
@@ -197,14 +195,14 @@ type ConstructorFor<
 export type Constructors<
   F extends TaggedLambda0,
   DiscriminantKey extends string,
-  Spec extends Record<string, false | readonly string[]>,
+  Spec extends Record<string, readonly string[]>,
 > = {
   [K in DataKeys<F>]: ConstructorFor<
     F,
     K,
     DiscriminantKey,
     K extends keyof Spec
-      ? Spec[K] extends false | readonly string[]
+      ? Spec[K] extends readonly string[]
         ? Spec[K]
         : never
       : never
@@ -615,9 +613,9 @@ export type MatcherW<
 export type TaggedUnion<
   F extends TaggedLambda0,
   DiscriminantKey extends string,
-  Spec extends Record<string, false | readonly string[]> = Record<
+  Spec extends Record<string, readonly string[]> = Record<
     string,
-    false | readonly string[]
+    readonly string[]
   >,
 > = Constructors<F, DiscriminantKey, Spec> & {
   readonly is: Guards<F, DiscriminantKey>
@@ -635,19 +633,18 @@ export type TaggedUnion<
 const mkTaggedUnionImpl = <
   F extends TaggedLambda0,
   DK extends string,
-  Spec extends Record<string, false | readonly string[]>,
+  Spec extends Record<string, readonly string[]>,
 >(
   dk: DK,
   members: Spec,
 ): TaggedUnion<F, DK, Spec> => {
   const constructors: Record<string, unknown> = {}
 
-  for (const [memberTag, specEntry] of Object.entries(members)) {
+  for (const [memberTag, fieldNames] of Object.entries(members)) {
     const discriminantPair = { [dk]: memberTag }
-    if (specEntry === false) {
+    if (fieldNames.length === 0) {
       constructors[memberTag] = discriminantPair
     } else {
-      const fieldNames = specEntry as readonly string[]
       constructors[memberTag] = (...args: unknown[]) => {
         const result: Record<string, unknown> = { ...discriminantPair }
         for (let i = 0; i < fieldNames.length; i++) {
@@ -737,7 +734,7 @@ const mkTaggedUnionImpl = <
  *   readonly data: MkData<this['type']>
  * }
  *
- * const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
+ * const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
  *
  * Maybe.Just(42)  // Maybe<number>
  * Maybe.Nothing   // Maybe<never>
@@ -778,7 +775,7 @@ export const mkTaggedUnion =
  * const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
  *   First: ['value'],
  *   Second: ['value'],
- *   Third: false,
+ *   Third: [],
  * })
  * ```
  *

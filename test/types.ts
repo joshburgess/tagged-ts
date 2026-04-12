@@ -54,7 +54,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
+const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
 
 // ---------------------------------------------------------------------------
 // Setup: Result<E, A> (arity 2, discriminant 'tag')
@@ -89,7 +89,7 @@ interface CounterActionLambda extends TaggedLambda0 {
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
   Increment: ['amount'],
-  Reset: false,
+  Reset: [],
 })
 
 // ---------------------------------------------------------------------------
@@ -111,7 +111,7 @@ const Env = mkTaggedUnion<EnvLambda>()({
   Ask: ['resource'],
   Pure: ['value'],
   Raise: ['error'],
-  Halt: false,
+  Halt: [],
 })
 
 // ---------------------------------------------------------------------------
@@ -132,7 +132,7 @@ interface StreamLambda extends TaggedLambda4 {
 const Stream = mkTaggedUnion<StreamLambda>()({
   Emit: ['state', 'value'],
   Fail: ['error'],
-  Done: false,
+  Done: [],
   Acquire: ['resource'],
 })
 
@@ -153,7 +153,7 @@ interface TrioLambda extends TaggedLambda1 {
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
   First: ['value'],
   Second: ['value'],
-  Third: false,
+  Third: [],
 })
 
 // ===========================================================================
@@ -251,13 +251,15 @@ type _L4Not0 = IsFalse<IsLambda0<StreamLambda>>
 // --- MemberSpec computes the correct field name arrays ---
 
 type MaybeMemberSpec = MemberSpec<MaybeLambda>
-type _MaybeSpecNothing = IsTrue<IsEqual<MaybeMemberSpec['Nothing'], false>>
+type _MaybeSpecNothing = IsTrue<
+  IsEqual<MaybeMemberSpec['Nothing'], readonly []>
+>
 
 type CounterSpec = MemberSpec<CounterActionLambda, 'type'>
-type _CounterSpecRst = IsTrue<IsEqual<CounterSpec['Reset'], false>>
+type _CounterSpecRst = IsTrue<IsEqual<CounterSpec['Reset'], readonly []>>
 
 type StreamSpec = MemberSpec<StreamLambda>
-type _StreamSpecDone = IsTrue<IsEqual<StreamSpec['Done'], false>>
+type _StreamSpecDone = IsTrue<IsEqual<StreamSpec['Done'], readonly []>>
 
 // ===========================================================================
 // Constructors structural type tests
@@ -268,7 +270,7 @@ type _StreamSpecDone = IsTrue<IsEqual<StreamSpec['Done'], false>>
 type MaybeCtors = Constructors<
   MaybeLambda,
   'tag',
-  { readonly Just: readonly ['value']; readonly Nothing: false }
+  { readonly Just: readonly ['value']; readonly Nothing: readonly [] }
 >
 
 // Nothing constructor should NOT be a function
@@ -284,7 +286,7 @@ type StreamCtors = Constructors<
   {
     readonly Emit: readonly ['state', 'value']
     readonly Fail: readonly ['error']
-    readonly Done: false
+    readonly Done: readonly []
     readonly Acquire: readonly ['resource']
   }
 >
