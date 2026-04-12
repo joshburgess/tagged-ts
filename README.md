@@ -57,7 +57,7 @@ interface MaybeLambda extends TaggedLambda1 {
 const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
 
 Maybe.Just({ value: 42 })  // Maybe<number>
-Maybe.Nothing               // Maybe<never>
+Maybe.Nothing              // Maybe<never>
 ```
 
 ## Quick Start: Positional Constructors
@@ -153,7 +153,7 @@ Constructors return the full union type, not the specific member, so you're forc
 
 ```ts
 const j = Maybe.Just({ value: 42 })  // Maybe<number>
-const n = Maybe.Nothing               // Maybe<never>
+const n = Maybe.Nothing              // Maybe<never>
 ```
 
 ### Type Guards
@@ -280,7 +280,7 @@ const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
 })
 
 CounterAction.Increment({ amount: 1 }) // CounterAction
-CounterAction.Reset                     // CounterAction
+CounterAction.Reset                    // CounterAction
 ```
 
 ### `tagged-ts/positional`
@@ -313,7 +313,7 @@ const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
 })
 
 CounterAction.Increment(1) // CounterAction
-CounterAction.Reset         // CounterAction
+CounterAction.Reset        // CounterAction
 ```
 
 ### MemberSpec
@@ -409,7 +409,7 @@ const Stream = mkTaggedUnion<StreamLambda>({
 })
 
 Stream.Emit({ state: 0, value: 'hello' })  // Stream<number, unknown, unknown, string>
-Stream.Done                                  // Stream<never, never, never, never>
+Stream.Done                                // Stream<never, never, never, never>
 
 Stream.match(Stream.Acquire({ resource: 'db' }), {
   Emit: x => `emit: ${x.value}`,
@@ -435,7 +435,7 @@ const Stream = mkTaggedUnion<StreamLambda>()({
 })
 
 Stream.Emit(0, 'hello')  // Stream<number, unknown, unknown, string>
-Stream.Done               // Stream<never, never, never, never>
+Stream.Done              // Stream<never, never, never, never>
 ```
 
 ## How It Works
