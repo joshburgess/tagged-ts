@@ -20,7 +20,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
 
 // ===========================================================================
 // Setup: Result<E, A> (arity 2, all non-nullary)
@@ -35,7 +35,10 @@ interface ResultLambda extends TaggedLambda2 {
   readonly data: MkData<this['type']>
 }
 
-const Result = mkTaggedUnion<ResultLambda>({ Success: true, Failure: true })
+const Result = mkTaggedUnion<ResultLambda>()({
+  Success: ['value'],
+  Failure: ['error'],
+})
 
 // ===========================================================================
 // Setup: MaybeNested<A> (arity 1, nested value types)
@@ -53,8 +56,8 @@ interface MaybeNestedLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const MaybeNested = mkTaggedUnion<MaybeNestedLambda>({
-  JustNested: true,
+const MaybeNested = mkTaggedUnion<MaybeNestedLambda>()({
+  JustNested: ['value'],
   NothingNested: false,
 })
 
@@ -77,9 +80,9 @@ interface ResultNestedLambda extends TaggedLambda2 {
   readonly data: MkData<this['type']>
 }
 
-const ResultNested = mkTaggedUnion<ResultNestedLambda>({
-  SuccessNested: true,
-  FailureNested: true,
+const ResultNested = mkTaggedUnion<ResultNestedLambda>()({
+  SuccessNested: ['value'],
+  FailureNested: ['error'],
 })
 
 // ===========================================================================
@@ -97,10 +100,10 @@ interface EnvLambda extends TaggedLambda3 {
   readonly data: MkData<this['type']>
 }
 
-const Env = mkTaggedUnion<EnvLambda>({
-  Ask: true,
-  Pure: true,
-  Raise: true,
+const Env = mkTaggedUnion<EnvLambda>()({
+  Ask: ['resource'],
+  Pure: ['value'],
+  Raise: ['error'],
   Halt: false,
 })
 
@@ -122,14 +125,14 @@ describe('Maybe<A> (arity 1, nullary + non-nullary)', () => {
     expect(Maybe.Nothing).toBe(Maybe.Nothing)
   })
 
-  it('non-nullary constructor has arity 1', () => {
-    expect(Maybe.Just.length).toBe(1)
+  it('non-nullary constructor is a function', () => {
+    expect(typeof Maybe.Just).toBe('function')
   })
 
   describe('constructors', () => {
-    it('builds non-nullary members with fields', () => {
-      expect(Maybe.Just({ value: 0 })).toEqual({ tag: 'Just', value: 0 })
-      expect(Maybe.Just({ value: 'hello' })).toEqual({
+    it('builds non-nullary members with positional args', () => {
+      expect(Maybe.Just(0)).toEqual({ tag: 'Just', value: 0 })
+      expect(Maybe.Just('hello')).toEqual({
         tag: 'Just',
         value: 'hello',
       })
@@ -142,7 +145,7 @@ describe('Maybe<A> (arity 1, nullary + non-nullary)', () => {
   })
 
   describe('guards', () => {
-    const just = Maybe.Just({ value: 42 })
+    const just = Maybe.Just(42)
     const nothing: Maybe<number> = Maybe.Nothing
 
     it('per-member guards return true for matching members', () => {
@@ -183,7 +186,7 @@ describe('Maybe<A> (arity 1, nullary + non-nullary)', () => {
 
   describe('match', () => {
     it('dispatches to the correct handler', () => {
-      const just = Maybe.Just({ value: 99 })
+      const just = Maybe.Just(99)
       const nothing: Maybe<number> = Maybe.Nothing
 
       expect(Maybe.match(just, { Just: x => x.tag, Nothing: x => x.tag })).toBe(
@@ -196,7 +199,7 @@ describe('Maybe<A> (arity 1, nullary + non-nullary)', () => {
 
     it('handlers receive the correct narrowed value', () => {
       expect(
-        Maybe.match(Maybe.Just({ value: 99 }), {
+        Maybe.match(Maybe.Just(99), {
           Just: x => x.value,
           Nothing: _x => 0,
         }),
@@ -204,7 +207,7 @@ describe('Maybe<A> (arity 1, nullary + non-nullary)', () => {
     })
 
     it('identity handlers return the original value', () => {
-      const just = Maybe.Just({ value: 42 })
+      const just = Maybe.Just(42)
       const nothing: Maybe<number> = Maybe.Nothing
 
       expect(
@@ -238,15 +241,15 @@ describe('Result<E, A> (arity 2, all non-nullary)', () => {
   })
 
   describe('constructors', () => {
-    it('builds Success with value field', () => {
-      expect(Result.Success({ value: 'OK' })).toEqual({
+    it('builds Success with positional value', () => {
+      expect(Result.Success('OK')).toEqual({
         tag: 'Success',
         value: 'OK',
       })
     })
 
-    it('builds Failure with error field', () => {
-      expect(Result.Failure({ error: 404 })).toEqual({
+    it('builds Failure with positional error', () => {
+      expect(Result.Failure(404)).toEqual({
         tag: 'Failure',
         error: 404,
       })
@@ -254,8 +257,8 @@ describe('Result<E, A> (arity 2, all non-nullary)', () => {
   })
 
   describe('guards', () => {
-    const s = Result.Success({ value: 'OK' })
-    const f = Result.Failure({ error: 500 })
+    const s = Result.Success('OK')
+    const f = Result.Failure(500)
 
     it('correctly identifies members', () => {
       expect(Result.is.Success(s)).toBe(true)
@@ -273,8 +276,8 @@ describe('Result<E, A> (arity 2, all non-nullary)', () => {
 
   describe('match', () => {
     it('dispatches correctly with explicit type params', () => {
-      const s = Result.Success<number, string>({ value: 'OK' })
-      const f = Result.Failure<number, string>({ error: 500 })
+      const s = Result.Success<number, string>('OK')
+      const f = Result.Failure<number, string>(500)
 
       expect(
         Result.match(s, { Success: x => x.value, Failure: x => 'failed' }),
@@ -292,7 +295,7 @@ describe('Result<E, A> (arity 2, all non-nullary)', () => {
 
 describe('MaybeNested<A> (nested value types)', () => {
   it('constructors handle nested fields', () => {
-    expect(MaybeNested.JustNested({ value: { nested: 42 } })).toEqual({
+    expect(MaybeNested.JustNested({ nested: 42 })).toEqual({
       tag: 'JustNested',
       value: { nested: 42 },
     })
@@ -300,7 +303,7 @@ describe('MaybeNested<A> (nested value types)', () => {
   })
 
   it('match extracts nested values', () => {
-    const j = MaybeNested.JustNested({ value: { nested: 99 } })
+    const j = MaybeNested.JustNested({ nested: 99 })
     expect(
       MaybeNested.match(j, {
         JustNested: x => x.value.nested,
@@ -310,7 +313,7 @@ describe('MaybeNested<A> (nested value types)', () => {
   })
 
   it('guards work with nested types', () => {
-    const j = MaybeNested.JustNested({ value: { nested: 0 } })
+    const j = MaybeNested.JustNested({ nested: 0 })
     const n: MaybeNested<number> = MaybeNested.NothingNested
 
     expect(MaybeNested.is.JustNested(j)).toBe(true)
@@ -326,20 +329,18 @@ describe('MaybeNested<A> (nested value types)', () => {
 
 describe('ResultNested<E, A> (nested value types, arity 2)', () => {
   it('constructors handle nested fields', () => {
-    expect(ResultNested.SuccessNested({ value: { nested: 'OK' } })).toEqual({
+    expect(ResultNested.SuccessNested({ nested: 'OK' })).toEqual({
       tag: 'SuccessNested',
       value: { nested: 'OK' },
     })
-    expect(ResultNested.FailureNested({ error: { nested: 404 } })).toEqual({
+    expect(ResultNested.FailureNested({ nested: 404 })).toEqual({
       tag: 'FailureNested',
       error: { nested: 404 },
     })
   })
 
   it('match extracts nested values', () => {
-    const s = ResultNested.SuccessNested<number, string>({
-      value: { nested: 'OK' },
-    })
+    const s = ResultNested.SuccessNested<number, string>({ nested: 'OK' })
     expect(
       ResultNested.match(s, {
         SuccessNested: x => x.value.nested,
@@ -349,8 +350,8 @@ describe('ResultNested<E, A> (nested value types, arity 2)', () => {
   })
 
   it('guards work with nested types', () => {
-    const s = ResultNested.SuccessNested({ value: { nested: 'OK' } })
-    const f = ResultNested.FailureNested({ error: { nested: 500 } })
+    const s = ResultNested.SuccessNested({ nested: 'OK' })
+    const f = ResultNested.FailureNested({ nested: 500 })
 
     expect(ResultNested.is.SuccessNested(s)).toBe(true)
     expect(ResultNested.is.FailureNested(f)).toBe(true)
@@ -380,13 +381,13 @@ describe('Env<R, E, A> (arity 3, with nullary Halt)', () => {
   })
 
   describe('constructors', () => {
-    it('builds non-nullary members', () => {
-      expect(Env.Ask({ resource: 'db' })).toEqual({
+    it('builds non-nullary members with positional args', () => {
+      expect(Env.Ask('db')).toEqual({
         tag: 'Ask',
         resource: 'db',
       })
-      expect(Env.Pure({ value: true })).toEqual({ tag: 'Pure', value: true })
-      expect(Env.Raise({ error: 42 })).toEqual({ tag: 'Raise', error: 42 })
+      expect(Env.Pure(true)).toEqual({ tag: 'Pure', value: true })
+      expect(Env.Raise(42)).toEqual({ tag: 'Raise', error: 42 })
     })
 
     it('builds nullary Halt as plain object', () => {
@@ -395,9 +396,9 @@ describe('Env<R, E, A> (arity 3, with nullary Halt)', () => {
   })
 
   describe('guards', () => {
-    const ask = Env.Ask({ resource: 'db' })
-    const pure = Env.Pure({ value: true })
-    const raise = Env.Raise({ error: 42 })
+    const ask = Env.Ask('db')
+    const pure = Env.Pure(true)
+    const raise = Env.Raise(42)
     const halt: Env<string, number, boolean> = Env.Halt
 
     it('correctly identifies each member', () => {
@@ -424,7 +425,7 @@ describe('Env<R, E, A> (arity 3, with nullary Halt)', () => {
 
   describe('match', () => {
     it('dispatches to the correct handler', () => {
-      const ask = Env.Ask({ resource: 'db' })
+      const ask = Env.Ask('db')
       const halt: Env<string, number, boolean> = Env.Halt
 
       expect(
@@ -454,12 +455,12 @@ describe('Env<R, E, A> (arity 3, with nullary Halt)', () => {
 
 describe('matchW (widened return type)', () => {
   it('dispatches like match', () => {
-    const j = Maybe.Just({ value: 42 })
+    const j = Maybe.Just(42)
     expect(Maybe.matchW(j, { Just: x => x.value, Nothing: _x => 0 })).toBe(42)
   })
 
   it('allows different return types per handler', () => {
-    const j = Maybe.Just({ value: 42 })
+    const j = Maybe.Just(42)
     const n: Maybe<number> = Maybe.Nothing
 
     const r1 = Maybe.matchW(j, {
@@ -476,14 +477,14 @@ describe('matchW (widened return type)', () => {
   })
 
   it('works with arity-2', () => {
-    const s = Result.Success({ value: 'OK' })
+    const s = Result.Success('OK')
     expect(
       Result.matchW(s, { Success: x => x.value, Failure: x => x.error }),
     ).toBe('OK')
   })
 
   it('works with arity-3', () => {
-    const ask = Env.Ask({ resource: 'db' })
+    const ask = Env.Ask('db')
     expect(
       Env.matchW(ask, {
         Ask: x => x.resource,
@@ -501,7 +502,7 @@ describe('matchW (widened return type)', () => {
 
 describe('matchOr (partial match with default)', () => {
   it('dispatches to provided handler when matched', () => {
-    const j = Maybe.Just({ value: 42 })
+    const j = Maybe.Just(42)
     expect(Maybe.matchOr(j, { Just: x => x.value }, _otherwise => -1)).toBe(42)
   })
 
@@ -511,7 +512,7 @@ describe('matchOr (partial match with default)', () => {
   })
 
   it('works with empty handlers — all go to fallback', () => {
-    const j = Maybe.Just({ value: 42 })
+    const j = Maybe.Just(42)
     expect(Maybe.matchOr(j, {}, _otherwise => -1)).toBe(-1)
   })
 
@@ -527,7 +528,7 @@ describe('matchOr (partial match with default)', () => {
   })
 
   it('works with arity-2', () => {
-    const f = Result.Failure({ error: 'oops' })
+    const f = Result.Failure('oops')
     expect(
       Result.matchOr(f, { Success: x => x.value }, _otherwise => 'default'),
     ).toBe('default')
@@ -551,7 +552,7 @@ describe('matcher (curried data-last match)', () => {
       Just: (x: Just<unknown>) => x.value as number,
       Nothing: (_x: Nothing) => 0,
     })
-    expect(f(Maybe.Just({ value: 42 }))).toBe(42)
+    expect(f(Maybe.Just(42))).toBe(42)
     expect(f(Maybe.Nothing as Maybe<number>)).toBe(0)
   })
 
@@ -560,8 +561,8 @@ describe('matcher (curried data-last match)', () => {
       Success: (x: Success<unknown>) => String(x.value),
       Failure: (x: Failure<unknown>) => String(x.error),
     })
-    expect(toStr(Result.Success({ value: 'OK' }))).toBe('OK')
-    expect(toStr(Result.Failure({ error: 404 }))).toBe('404')
+    expect(toStr(Result.Success('OK'))).toBe('OK')
+    expect(toStr(Result.Failure(404))).toBe('404')
   })
 })
 
@@ -575,7 +576,7 @@ describe('matcherW (curried data-last widened match)', () => {
       Just: (x: Just<unknown>) => x.value,
       Nothing: (_x: Nothing) => 'nothing' as const,
     })
-    expect(f(Maybe.Just({ value: 42 }))).toBe(42)
+    expect(f(Maybe.Just(42))).toBe(42)
     expect(f(Maybe.Nothing as Maybe<number>)).toBe('nothing')
   })
 })
@@ -586,8 +587,8 @@ describe('matcherW (curried data-last widened match)', () => {
 
 describe('edge cases', () => {
   it('constructors do not share state between calls', () => {
-    const j1 = Maybe.Just({ value: 1 })
-    const j2 = Maybe.Just({ value: 2 })
+    const j1 = Maybe.Just(1)
+    const j2 = Maybe.Just(2)
     expect(j1).not.toBe(j2)
     expect(j1).toEqual({ tag: 'Just', value: 1 })
     expect(j2).toEqual({ tag: 'Just', value: 2 })

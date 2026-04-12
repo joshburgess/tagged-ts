@@ -7,7 +7,7 @@
  * - Types narrow properly through guards and match
  * - MkData auto-generates correct data maps
  * - Arity detection (IsLambda0-4) works correctly
- * - MemberSpec constrains the boolean map correctly
+ * - MemberSpec constrains the field names map correctly
  *
  * This file is checked by `tsc --noEmit` but never executed at runtime.
  */
@@ -54,7 +54,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
 
 // ---------------------------------------------------------------------------
 // Setup: Result<E, A> (arity 2, discriminant 'tag')
@@ -69,7 +69,10 @@ interface ResultLambda extends TaggedLambda2 {
   readonly data: MkData<this['type']>
 }
 
-const Result = mkTaggedUnion<ResultLambda>({ Success: true, Failure: true })
+const Result = mkTaggedUnion<ResultLambda>()({
+  Success: ['value'],
+  Failure: ['error'],
+})
 
 // ---------------------------------------------------------------------------
 // Setup: CounterAction (arity 0, discriminant 'type')
@@ -85,7 +88,7 @@ interface CounterActionLambda extends TaggedLambda0 {
 }
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
-  Increment: true,
+  Increment: ['amount'],
   Reset: false,
 })
 
@@ -104,10 +107,10 @@ interface EnvLambda extends TaggedLambda3 {
   readonly data: MkData<this['type']>
 }
 
-const Env = mkTaggedUnion<EnvLambda>({
-  Ask: true,
-  Pure: true,
-  Raise: true,
+const Env = mkTaggedUnion<EnvLambda>()({
+  Ask: ['resource'],
+  Pure: ['value'],
+  Raise: ['error'],
   Halt: false,
 })
 
@@ -126,11 +129,11 @@ interface StreamLambda extends TaggedLambda4 {
   readonly data: MkData<this['type']>
 }
 
-const Stream = mkTaggedUnion<StreamLambda>({
-  Emit: true,
-  Fail: true,
+const Stream = mkTaggedUnion<StreamLambda>()({
+  Emit: ['state', 'value'],
+  Fail: ['error'],
   Done: false,
-  Acquire: true,
+  Acquire: ['resource'],
 })
 
 // ---------------------------------------------------------------------------
@@ -148,8 +151,8 @@ interface TrioLambda extends TaggedLambda1 {
 }
 
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
-  First: true,
-  Second: true,
+  First: ['value'],
+  Second: ['value'],
   Third: false,
 })
 
@@ -245,25 +248,16 @@ type _L4Not0 = IsFalse<IsLambda0<StreamLambda>>
 // MemberSpec tests
 // ===========================================================================
 
-// --- MemberSpec computes the correct booleans ---
+// --- MemberSpec computes the correct field name arrays ---
 
 type MaybeMemberSpec = MemberSpec<MaybeLambda>
-type _MaybeSpecJust = IsTrue<IsEqual<MaybeMemberSpec['Just'], true>>
 type _MaybeSpecNothing = IsTrue<IsEqual<MaybeMemberSpec['Nothing'], false>>
 
-type ResultMemberSpec = MemberSpec<ResultLambda>
-type _ResultSpecSuccess = IsTrue<IsEqual<ResultMemberSpec['Success'], true>>
-type _ResultSpecFailure = IsTrue<IsEqual<ResultMemberSpec['Failure'], true>>
-
 type CounterSpec = MemberSpec<CounterActionLambda, 'type'>
-type _CounterSpecInc = IsTrue<IsEqual<CounterSpec['Increment'], true>>
 type _CounterSpecRst = IsTrue<IsEqual<CounterSpec['Reset'], false>>
 
 type StreamSpec = MemberSpec<StreamLambda>
-type _StreamSpecEmit = IsTrue<IsEqual<StreamSpec['Emit'], true>>
-type _StreamSpecFail = IsTrue<IsEqual<StreamSpec['Fail'], true>>
 type _StreamSpecDone = IsTrue<IsEqual<StreamSpec['Done'], false>>
-type _StreamSpecAcq = IsTrue<IsEqual<StreamSpec['Acquire'], true>>
 
 // ===========================================================================
 // Constructors structural type tests
@@ -271,7 +265,11 @@ type _StreamSpecAcq = IsTrue<IsEqual<StreamSpec['Acquire'], true>>
 
 // --- Nullary constructors are value types, not functions ---
 
-type MaybeCtors = Constructors<MaybeLambda, 'tag'>
+type MaybeCtors = Constructors<
+  MaybeLambda,
+  'tag',
+  { readonly Just: readonly ['value']; readonly Nothing: false }
+>
 
 // Nothing constructor should NOT be a function
 type _NothingIsNotFn = IsFalse<IsAssignable<MaybeCtors['Nothing'], Function>>
@@ -280,7 +278,16 @@ type _NothingIsNotFn = IsFalse<IsAssignable<MaybeCtors['Nothing'], Function>>
 type _JustIsFn = IsTrue<IsAssignable<MaybeCtors['Just'], Function>>
 
 // Arity-4 nullary: Done should not be a function
-type StreamCtors = Constructors<StreamLambda, 'tag'>
+type StreamCtors = Constructors<
+  StreamLambda,
+  'tag',
+  {
+    readonly Emit: readonly ['state', 'value']
+    readonly Fail: readonly ['error']
+    readonly Done: false
+    readonly Acquire: readonly ['resource']
+  }
+>
 type _DoneIsNotFn = IsFalse<IsAssignable<StreamCtors['Done'], Function>>
 type _EmitIsFn = IsTrue<IsAssignable<StreamCtors['Emit'], Function>>
 
@@ -294,39 +301,32 @@ type _EmitIsFn = IsTrue<IsAssignable<StreamCtors['Emit'], Function>>
 const nothing: Maybe<number> = Maybe.Nothing
 const nothing2: Maybe<string> = Maybe.Nothing
 
-// Constructor with fields infers generic type param
-const justNum: Maybe<number> = Maybe.Just({ value: 42 })
-const justStr: Maybe<string> = Maybe.Just({ value: 'hello' })
+// Positional constructor infers generic type param
+const justNum: Maybe<number> = Maybe.Just(42)
+const justStr: Maybe<string> = Maybe.Just('hello')
 
 // Non-nullary constructors are always functions
-const success: Result<string, number> = Result.Success({ value: 42 })
-const failure: Result<string, number> = Result.Failure({ error: 'oops' })
+const success: Result<string, number> = Result.Success(42)
+const failure: Result<string, number> = Result.Failure('oops')
 
-// Arity-0: Increment takes fields, Reset is a constant
-const inc: CounterAction = CounterAction.Increment({ amount: 5 })
+// Arity-0: Increment takes positional arg, Reset is a constant
+const inc: CounterAction = CounterAction.Increment(5)
 const rst: CounterAction = CounterAction.Reset
 
 // Arity-3: constructors and constants
-const ask: Env<string, number, boolean> = Env.Ask({ resource: 'db' })
-const pure: Env<string, number, boolean> = Env.Pure({ value: true })
-const raise: Env<string, number, boolean> = Env.Raise({ error: 42 })
+const ask: Env<string, number, boolean> = Env.Ask('db')
+const pure: Env<string, number, boolean> = Env.Pure(true)
+const raise: Env<string, number, boolean> = Env.Raise(42)
 const halt: Env<string, number, boolean> = Env.Halt
 
-// Arity-4: constructors and constants
-const emit: Stream<string, number, boolean, bigint> = Stream.Emit({
-  state: 's',
-  value: 0n,
-})
-const fail: Stream<string, number, boolean, bigint> = Stream.Fail({
-  error: true,
-})
+// Arity-4: constructors and constants (multi-field uses positional args)
+const emit: Stream<string, number, boolean, bigint> = Stream.Emit('s', 0n)
+const fail: Stream<string, number, boolean, bigint> = Stream.Fail(true)
 const done: Stream<string, number, boolean, bigint> = Stream.Done
-const acquire: Stream<string, number, boolean, bigint> = Stream.Acquire({
-  resource: 1,
-})
+const acquire: Stream<string, number, boolean, bigint> = Stream.Acquire(1)
 
 // Custom discriminant
-const first: Trio<number> = Trio.First({ value: 42 })
+const first: Trio<number> = Trio.First(42)
 const third: Trio<number> = Trio.Third
 
 // --- Constructors return the full union type, not the specific member ---
@@ -349,14 +349,8 @@ type _NothingIsUnion = IsTrue<IsEqual<typeof Maybe.Nothing, Maybe<never>>>
 
 // --- Invalid usage is rejected ---
 
-// @ts-expect-error - Just requires a `value` field
-Maybe.Just({})
-
-// @ts-expect-error - Just requires an object with `value`, not a bare value
-Maybe.Just(42)
-
-// @ts-expect-error - Wrong field name
-Maybe.Just({ val: 42 })
+// @ts-expect-error - Just requires exactly one positional arg
+Maybe.Just()
 
 // @ts-expect-error - Nothing is a constant, not a function
 Maybe.Nothing()
@@ -373,20 +367,17 @@ Stream.Done()
 // @ts-expect-error - Third is a constant, not a function
 Trio.Third()
 
-// @ts-expect-error - Success requires a `value` field
-Result.Success({})
+// @ts-expect-error - Success requires exactly one positional arg
+Result.Success()
 
-// @ts-expect-error - Failure requires an `error` field
-Result.Failure({})
+// @ts-expect-error - Failure requires exactly one positional arg
+Result.Failure()
 
-// @ts-expect-error - Wrong field name for Failure
-Result.Failure({ value: 'wrong' })
+// @ts-expect-error - Ask requires a positional arg
+Env.Ask()
 
-// @ts-expect-error - Ask requires a `resource` field
-Env.Ask({})
-
-// @ts-expect-error - Emit requires both `state` and `value`
-Stream.Emit({ state: 's' })
+// @ts-expect-error - Emit requires two positional args (state, value)
+Stream.Emit('s')
 
 // ===========================================================================
 // Type guard tests
@@ -394,9 +385,9 @@ Stream.Emit({ state: 's' })
 
 // --- Guards exist and return booleans ---
 
-const guardResult1: boolean = Maybe.is.Just(Maybe.Just({ value: 1 }))
+const guardResult1: boolean = Maybe.is.Just(Maybe.Just(1))
 const guardResult2: boolean = Maybe.is.Nothing(Maybe.Nothing)
-const guardResult3: boolean = Maybe.is.memberOfUnion(Maybe.Just({ value: 1 }))
+const guardResult3: boolean = Maybe.is.memberOfUnion(Maybe.Just(1))
 
 // --- Guards narrow types properly ---
 
@@ -488,19 +479,19 @@ function testEnvGuardRejectsWrongAccess(e: Env<string, number, boolean>) {
 
 // --- Match returns the correct type ---
 
-const matchStr: string = Maybe.match(Maybe.Just({ value: 42 }), {
+const matchStr: string = Maybe.match(Maybe.Just(42), {
   Just: x => String(x.value),
   Nothing: _x => 'nothing',
 })
 
-const matchNum: number = Maybe.match(Maybe.Just({ value: 42 }), {
+const matchNum: number = Maybe.match(Maybe.Just(42), {
   Just: x => x.value,
   Nothing: _x => 0,
 })
 
 // --- Match case handlers receive correctly typed arguments ---
 
-Maybe.match(Maybe.Just({ value: 42 }), {
+Maybe.match(Maybe.Just(42), {
   Just: x => {
     const v: number = x.value
     const t: 'Just' = x.tag
@@ -514,7 +505,7 @@ Maybe.match(Maybe.Just({ value: 42 }), {
 
 // --- Arity-3 match ---
 
-Env.match(Env.Ask<string, number, boolean>({ resource: 'db' }), {
+Env.match(Env.Ask<string, number, boolean>('db'), {
   Ask: x => {
     const r: string = x.resource
     return r
@@ -526,46 +517,43 @@ Env.match(Env.Ask<string, number, boolean>({ resource: 'db' }), {
 
 // --- Arity-4 match ---
 
-Stream.match(
-  Stream.Emit<string, number, boolean, bigint>({ state: 's', value: 0n }),
-  {
-    Emit: x => {
-      const st: string = x.state
-      const v: bigint = x.value
-      return `${st}:${v}`
-    },
-    Fail: x => String(x.error),
-    Done: _x => 'done',
-    Acquire: x => String(x.resource),
+Stream.match(Stream.Emit<string, number, boolean, bigint>('s', 0n), {
+  Emit: x => {
+    const st: string = x.state
+    const v: bigint = x.value
+    return `${st}:${v}`
   },
-)
+  Fail: x => String(x.error),
+  Done: _x => 'done',
+  Acquire: x => String(x.resource),
+})
 
 // --- Match requires exhaustive case handlers ---
 
 // @ts-expect-error - Missing 'Nothing' case handler
-Maybe.match(Maybe.Just({ value: 42 }), {
+Maybe.match(Maybe.Just(42), {
   Just: x => x.value,
 })
 
 // @ts-expect-error - Missing 'Just' case handler
-Maybe.match(Maybe.Just({ value: 42 }), {
+Maybe.match(Maybe.Just(42), {
   Nothing: _x => 0,
 })
 
 // @ts-expect-error - Missing 'Failure' case handler
-Result.match(Result.Success<string, number>({ value: 42 }), {
+Result.match(Result.Success<string, number>(42), {
   Success: x => x.value,
 })
 
 // @ts-expect-error - Missing 'Halt' case handler for arity-3
-Env.match(Env.Ask<string, number, boolean>({ resource: 'db' }), {
+Env.match(Env.Ask<string, number, boolean>('db'), {
   Ask: x => x.resource,
   Pure: x => String(x.value),
   Raise: x => String(x.error),
 })
 
 Stream.match(
-  Stream.Emit<string, number, boolean, bigint>({ state: 's', value: 0n }),
+  Stream.Emit<string, number, boolean, bigint>('s', 0n),
   // @ts-expect-error - Missing 'Acquire' case handler for arity-4
   {
     Emit: x => String(x.value),
@@ -576,7 +564,7 @@ Stream.match(
 
 // --- Match rejects wrong field access in handlers ---
 
-Maybe.match(Maybe.Just({ value: 42 }), {
+Maybe.match(Maybe.Just(42), {
   Just: x => {
     // @ts-expect-error - Just doesn't have `error` field
     return x.error
@@ -590,7 +578,7 @@ Maybe.match(Maybe.Just({ value: 42 }), {
 
 // --- matchW allows different return types per handler ---
 
-const matchWResult = Maybe.matchW(Maybe.Just({ value: 42 }), {
+const matchWResult = Maybe.matchW(Maybe.Just(42), {
   Just: x => x.value,
   Nothing: _x => 'nothing' as const,
 })
@@ -599,27 +587,21 @@ const matchWResult = Maybe.matchW(Maybe.Just({ value: 42 }), {
 type _MatchWType = IsTrue<IsEqual<typeof matchWResult, number | 'nothing'>>
 
 // Arity-2 matchW: each handler can return a different type
-const resultMatchW = Result.matchW(
-  Result.Success<string, number>({ value: 1 }),
-  {
-    Success: x => x.value,
-    Failure: x => x.error,
-  },
-)
+const resultMatchW = Result.matchW(Result.Success<string, number>(1), {
+  Success: x => x.value,
+  Failure: x => x.error,
+})
 // Verify both branches contribute to the return type
 const _resultMatchWToNum: number = resultMatchW as number
 const _resultMatchWToStr: string = resultMatchW as string
 
 // Arity-3 matchW
-const envMatchW = Env.matchW(
-  Env.Ask<string, number, boolean>({ resource: 'db' }),
-  {
-    Ask: x => x.resource,
-    Pure: x => x.value,
-    Raise: x => x.error,
-    Halt: _x => null,
-  },
-)
+const envMatchW = Env.matchW(Env.Ask<string, number, boolean>('db'), {
+  Ask: x => x.resource,
+  Pure: x => x.value,
+  Raise: x => x.error,
+  Halt: _x => null,
+})
 const _envMatchWToStr: string = envMatchW as string
 const _envMatchWToNull: null = envMatchW as null
 
@@ -630,28 +612,24 @@ const _envMatchWToNull: null = envMatchW as null
 // --- matchOr allows partial handlers with a fallback ---
 
 const matchOrResult: number = Maybe.matchOr(
-  Maybe.Just({ value: 42 }),
+  Maybe.Just(42),
   { Just: x => x.value },
   _otherwise => 0,
 )
 
 // Only handle some cases, fallback covers the rest
 const matchOrPartial: string = Result.matchOr(
-  Result.Success<string, number>({ value: 1 }),
+  Result.Success<string, number>(1),
   { Success: x => String(x.value) },
   _otherwise => 'default',
 )
 
 // Empty handlers — everything goes to fallback
-const matchOrEmpty: number = Maybe.matchOr(
-  Maybe.Just({ value: 42 }),
-  {},
-  _otherwise => -1,
-)
+const matchOrEmpty: number = Maybe.matchOr(Maybe.Just(42), {}, _otherwise => -1)
 
 // Arity-3 matchOr
 const envMatchOr: string = Env.matchOr(
-  Env.Ask<string, number, boolean>({ resource: 'db' }),
+  Env.Ask<string, number, boolean>('db'),
   { Ask: x => x.resource },
   _otherwise => 'fallback',
 )
@@ -671,7 +649,7 @@ const maybeMatcher: (a: Maybe<number>) => string = Maybe.matcher<
 })
 
 // Application works
-const matcherApplied: string = maybeMatcher(Maybe.Just({ value: 42 }))
+const matcherApplied: string = maybeMatcher(Maybe.Just(42))
 
 // Arity-2 curried
 const resultMatcher = Result.matcher<string, number, string>({
@@ -717,31 +695,31 @@ function testEnvMemberOfUnion(x: unknown) {
 // ===========================================================================
 
 function wrapInJust<T>(value: T): Maybe<T> {
-  return Maybe.Just({ value })
+  return Maybe.Just(value)
 }
 
 const wrappedNum: Maybe<number> = wrapInJust(42)
 const wrappedStr: Maybe<string> = wrapInJust('hello')
 
 function wrapInSuccess<E, A>(value: A): Result<E, A> {
-  return Result.Success({ value })
+  return Result.Success(value)
 }
 
 function wrapInFailure<E, A>(error: E): Result<E, A> {
-  return Result.Failure({ error })
+  return Result.Failure(error)
 }
 
 const ok: Result<string, number> = wrapInSuccess(42)
 const err: Result<string, number> = wrapInFailure('oops')
 
 function wrapInAsk<R, E, A>(resource: R): Env<R, E, A> {
-  return Env.Ask({ resource })
+  return Env.Ask(resource)
 }
 
 const askStr: Env<string, number, boolean> = wrapInAsk('db')
 
 function wrapInEmit<S, R, E, A>(state: S, value: A): Stream<S, R, E, A> {
-  return Stream.Emit({ state, value })
+  return Stream.Emit(state, value)
 }
 
 const emitVal: Stream<string, number, boolean, bigint> = wrapInEmit('s', 0n)
@@ -751,7 +729,7 @@ const emitVal: Stream<string, number, boolean, bigint> = wrapInEmit('s', 0n)
 // ===========================================================================
 
 // Just<A> is assignable to Maybe<A>
-const j: Maybe<number> = Maybe.Just({ value: 1 })
+const j: Maybe<number> = Maybe.Just(1)
 
 // Nothing is assignable to Maybe<A> for any A
 const n1: Maybe<number> = Maybe.Nothing
@@ -767,7 +745,7 @@ const d1: Stream<string, number, boolean, bigint> = Stream.Done
 const d2: Stream<number, string, object, symbol> = Stream.Done
 
 // @ts-expect-error - Maybe<string> is not assignable to Maybe<number>
-const wrongType: Maybe<number> = Maybe.Just({ value: 'string' })
+const wrongType: Maybe<number> = Maybe.Just('string')
 
 // ===========================================================================
 // Variance and edge cases with never/unknown
@@ -778,13 +756,11 @@ const neverMaybe: Maybe<never> = Maybe.Nothing
 const neverToNum: Maybe<number> = neverMaybe
 
 // Result<never, never> is assignable to Result<E, A> for any E, A
-const neverResult: Result<never, never> = Result.Success({
-  value: undefined as never,
-})
+const neverResult: Result<never, never> = Result.Success(undefined as never)
 const neverToStr: Result<string, number> = neverResult
 
 // Match return type widens correctly
-const matchWidened: number = Maybe.match(Maybe.Just({ value: 42 }), {
+const matchWidened: number = Maybe.match(Maybe.Just(42), {
   Just: _x => 42 as number,
   Nothing: _x => 0,
 })
@@ -797,5 +773,3 @@ type _TUHasMatchW = _TU['matchW']
 type _TUHasMatchOr = _TU['matchOr']
 type _TUHasMatcher = _TU['matcher']
 type _TUHasMatcherW = _TU['matcherW']
-type _TUHasJust = _TU['Just']
-type _TUHasNothing = _TU['Nothing']

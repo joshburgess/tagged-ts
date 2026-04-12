@@ -5,7 +5,7 @@
  * @since 0.3.0
  */
 
-import type { SelectUnionMember } from './internal/Utils'
+import type { SelectUnionMember, StringKeyOf } from './internal/Utils'
 import type {
   ApplyData0,
   ApplyData1,
@@ -60,24 +60,40 @@ type MemberShape<F extends TaggedLambda0, K extends DataKeys<F>> = F['data'][K &
 /**
  * Describes which members of a tagged union have fields beyond the discriminant.
  *
- * - `true` = has fields beyond the discriminant key -> function constructor
+ * - `['field1', 'field2', ...]` = has fields beyond the discriminant key ->
+ *   function constructor with positional args in the specified order
  * - `false` = no fields beyond the discriminant key -> constant value
  *
  * @example
  * ```ts
- * // Just<A> has `value` (true), Nothing has no extra fields (false)
- * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+ * // Just<A> has `value`, Nothing has no extra fields
+ * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: ['value'], Nothing: false })
+ *
+ * Maybe.Just(42)  // positional arg
+ * Maybe.Nothing   // constant value
  * ```
  *
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type MemberSpec<F extends TaggedLambda0, DK extends string = 'tag'> = {
-  [K in DataKeys<F>]: {} extends Omit<MemberShape<F, K>, DK> ? false : true
+  [K in DataKeys<F>]: {} extends Omit<MemberShape<F, K>, DK>
+    ? false
+    : readonly StringKeyOf<Omit<MemberShape<F, K>, DK>>[]
 }
 
 // ---------------------------------------------------------------------------
 // Type helpers (internal)
 // ---------------------------------------------------------------------------
+
+/**
+ * Map a tuple of field names to a tuple of the corresponding value types.
+ *
+ * Given an object `T` and an ordered tuple of its keys `Keys`,
+ * produces a tuple of `T[K]` values in the same order.
+ */
+type FieldsToTuple<T, Keys extends readonly string[]> = {
+  -readonly [I in keyof Keys]: Keys[I] extends keyof T ? T[Keys[I]] : never
+}
 
 /**
  * Constructor type for a nullary member (no fields beyond the discriminant).
@@ -95,59 +111,75 @@ type NullaryConstructor<F extends TaggedLambda0> = F extends TaggedLambda4
 
 /**
  * Constructor type for a non-nullary member (has fields beyond the discriminant).
- * Always a function taking the non-discriminant fields.
+ * Takes positional arguments in the order specified by the field names tuple.
  */
 type NonNullaryConstructor<
   F extends TaggedLambda0,
   K extends DataKeys<F>,
   DiscriminantKey extends string,
+  FieldKeys extends readonly string[],
 > = F extends TaggedLambda4
   ? <S, R, E, A>(
-      fields: Omit<
-        ApplyData4<F, S, R, E, A>[K & keyof ApplyData4<F, S, R, E, A>],
-        DiscriminantKey
-      >,
+      ...fields: FieldsToTuple<
+        Omit<
+          ApplyData4<F, S, R, E, A>[K & keyof ApplyData4<F, S, R, E, A>],
+          DiscriminantKey
+        >,
+        FieldKeys
+      >
     ) => ApplyType4<F, S, R, E, A>
   : F extends TaggedLambda3
     ? <R, E, A>(
-        fields: Omit<
-          ApplyData3<F, R, E, A>[K & keyof ApplyData3<F, R, E, A>],
-          DiscriminantKey
-        >,
+        ...fields: FieldsToTuple<
+          Omit<
+            ApplyData3<F, R, E, A>[K & keyof ApplyData3<F, R, E, A>],
+            DiscriminantKey
+          >,
+          FieldKeys
+        >
       ) => ApplyType3<F, R, E, A>
     : F extends TaggedLambda2
       ? <E, A>(
-          fields: Omit<
-            ApplyData2<F, E, A>[K & keyof ApplyData2<F, E, A>],
-            DiscriminantKey
-          >,
+          ...fields: FieldsToTuple<
+            Omit<
+              ApplyData2<F, E, A>[K & keyof ApplyData2<F, E, A>],
+              DiscriminantKey
+            >,
+            FieldKeys
+          >
         ) => ApplyType2<F, E, A>
       : F extends TaggedLambda1
         ? <A>(
-            fields: Omit<
-              ApplyData1<F, A>[K & keyof ApplyData1<F, A>],
-              DiscriminantKey
-            >,
+            ...fields: FieldsToTuple<
+              Omit<
+                ApplyData1<F, A>[K & keyof ApplyData1<F, A>],
+                DiscriminantKey
+              >,
+              FieldKeys
+            >
           ) => ApplyType1<F, A>
         : (
-            fields: Omit<
-              ApplyData0<F>[K & keyof ApplyData0<F>],
-              DiscriminantKey
-            >,
+            ...fields: FieldsToTuple<
+              Omit<ApplyData0<F>[K & keyof ApplyData0<F>], DiscriminantKey>,
+              FieldKeys
+            >
           ) => ApplyType0<F>
 
 /**
  * Constructor type for a single member of a tagged union.
- * Nullary members are constant values; non-nullary members are functions.
+ * Nullary members are constant values; non-nullary members are functions
+ * with positional args.
  */
 type ConstructorFor<
   F extends TaggedLambda0,
   K extends DataKeys<F>,
   DiscriminantKey extends string,
-> =
-  {} extends Omit<MemberShape<F, K>, DiscriminantKey>
-    ? NullaryConstructor<F>
-    : NonNullaryConstructor<F, K, DiscriminantKey>
+  SpecEntry extends false | readonly string[],
+> = SpecEntry extends false
+  ? NullaryConstructor<F>
+  : SpecEntry extends readonly string[]
+    ? NonNullaryConstructor<F, K, DiscriminantKey, SpecEntry>
+    : never
 
 // ---------------------------------------------------------------------------
 // Constructors
@@ -157,15 +189,26 @@ type ConstructorFor<
  * Generated data constructors for a tagged union.
  *
  * Nullary members (no fields beyond the discriminant) are constant values.
- * Non-nullary members are functions taking the remaining fields.
+ * Non-nullary members are functions taking positional arguments in the
+ * order specified by the member spec.
  *
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type Constructors<
   F extends TaggedLambda0,
   DiscriminantKey extends string,
+  Spec extends Record<string, false | readonly string[]>,
 > = {
-  [K in DataKeys<F>]: ConstructorFor<F, K, DiscriminantKey>
+  [K in DataKeys<F>]: ConstructorFor<
+    F,
+    K,
+    DiscriminantKey,
+    K extends keyof Spec
+      ? Spec[K] extends false | readonly string[]
+        ? Spec[K]
+        : never
+      : never
+  >
 }
 
 // ---------------------------------------------------------------------------
@@ -567,12 +610,16 @@ export type MatcherW<
 /**
  * The combined result: constructors + guards + match variants.
  *
- * @since 0.4.0
+ * @since 0.5.0
  */
 export type TaggedUnion<
   F extends TaggedLambda0,
   DiscriminantKey extends string,
-> = Constructors<F, DiscriminantKey> & {
+  Spec extends Record<string, false | readonly string[]> = Record<
+    string,
+    false | readonly string[]
+  >,
+> = Constructors<F, DiscriminantKey, Spec> & {
   readonly is: Guards<F, DiscriminantKey>
   readonly match: Match<F, DiscriminantKey>
   readonly matchW: MatchW<F, DiscriminantKey>
@@ -585,21 +632,29 @@ export type TaggedUnion<
 // Runtime implementation (internal)
 // ---------------------------------------------------------------------------
 
-const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
+const mkTaggedUnionImpl = <
+  F extends TaggedLambda0,
+  DK extends string,
+  Spec extends Record<string, false | readonly string[]>,
+>(
   dk: DK,
-  members: Record<string, boolean>,
-): TaggedUnion<F, DK> => {
+  members: Spec,
+): TaggedUnion<F, DK, Spec> => {
   const constructors: Record<string, unknown> = {}
 
-  for (const [memberTag, hasFields] of Object.entries(members)) {
+  for (const [memberTag, specEntry] of Object.entries(members)) {
     const discriminantPair = { [dk]: memberTag }
-    if (hasFields) {
-      constructors[memberTag] = (fields: Record<string, unknown>) => ({
-        ...discriminantPair,
-        ...fields,
-      })
-    } else {
+    if (specEntry === false) {
       constructors[memberTag] = discriminantPair
+    } else {
+      const fieldNames = specEntry as readonly string[]
+      constructors[memberTag] = (...args: unknown[]) => {
+        const result: Record<string, unknown> = { ...discriminantPair }
+        for (let i = 0; i < fieldNames.length; i++) {
+          result[fieldNames[i] as string] = args[i]
+        }
+        return result
+      }
     }
   }
 
@@ -654,7 +709,7 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
     matchOr,
     matcher,
     matcherW: matcher,
-  } as unknown as TaggedUnion<F, DK>
+  } as unknown as TaggedUnion<F, DK, Spec>
 }
 
 // ---------------------------------------------------------------------------
@@ -667,7 +722,8 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
  * Uses `'tag'` as the discriminant key. For custom discriminant keys,
  * use `mkTaggedUnionCustom`.
  *
- * Members with fields beyond the discriminant become function constructors.
+ * Non-nullary members become function constructors with positional args
+ * in the order specified by the field names array.
  * Nullary members (discriminant only) become constant values.
  *
  * @example
@@ -681,18 +737,20 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
  *   readonly data: MkData<this['type']>
  * }
  *
- * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+ * const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: false })
  *
- * Maybe.Just({ value: 42 })  // Maybe<number>
- * Maybe.Nothing               // Maybe<never>
+ * Maybe.Just(42)  // Maybe<number>
+ * Maybe.Nothing   // Maybe<never>
  * ```
  *
- * @since 0.4.0
+ * @since 0.5.0
  */
-export const mkTaggedUnion = <F extends TaggedLambda0>(
-  members: MemberSpec<F, 'tag'>,
-): TaggedUnion<F, 'tag'> =>
-  mkTaggedUnionImpl<F, 'tag'>('tag', members as Record<string, boolean>)
+export const mkTaggedUnion =
+  <F extends TaggedLambda0>() =>
+  <const Spec extends MemberSpec<F, 'tag'>>(
+    members: Spec,
+  ): TaggedUnion<F, 'tag', Spec> =>
+    mkTaggedUnionImpl<F, 'tag', Spec>('tag', members as Spec)
 
 // ---------------------------------------------------------------------------
 // Main API: mkTaggedUnionCustom
@@ -718,18 +776,18 @@ export const mkTaggedUnion = <F extends TaggedLambda0>(
  * }
  *
  * const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
- *   First: true,
- *   Second: true,
+ *   First: ['value'],
+ *   Second: ['value'],
  *   Third: false,
  * })
  * ```
  *
- * @since 0.4.0
+ * @since 0.5.0
  */
 export const mkTaggedUnionCustom =
   <F extends TaggedLambda0>() =>
-  <DK extends string>(
+  <DK extends string, const Spec extends MemberSpec<F, DK>>(
     discriminant: DK,
-    members: MemberSpec<F, DK>,
-  ): TaggedUnion<F, DK> =>
-    mkTaggedUnionImpl<F, DK>(discriminant, members as Record<string, boolean>)
+    members: Spec,
+  ): TaggedUnion<F, DK, Spec> =>
+    mkTaggedUnionImpl<F, DK, Spec>(discriminant, members as Spec)
