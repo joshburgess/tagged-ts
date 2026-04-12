@@ -19,7 +19,7 @@ export type {
   MatcherW,
   MatchOr,
   MatchW,
-} from './internal/shared'
+} from './internal/shared.js'
 // Lambda types (type lambdas, MkData, Apply*, DataKeys)
 export type {
   ApplyData0,
@@ -40,4 +40,4 @@ export type {
   TaggedLambda2,
   TaggedLambda3,
   TaggedLambda4,
-} from './Lambda'
+} from './Lambda.js'

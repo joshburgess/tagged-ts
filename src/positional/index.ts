@@ -20,9 +20,9 @@ import type {
   MatchW,
   MemberShape,
   NullaryConstructor,
-} from '../internal/shared'
-import { mkGuardsAndMatchers } from '../internal/shared'
-import type { StringKeyOf } from '../internal/Utils'
+} from '../internal/shared.js'
+import { mkGuardsAndMatchers } from '../internal/shared.js'
+import type { StringKeyOf } from '../internal/Utils.js'
 import type {
   ApplyData0,
   ApplyData1,
@@ -40,7 +40,7 @@ import type {
   TaggedLambda2,
   TaggedLambda3,
   TaggedLambda4,
-} from '../Lambda'
+} from '../Lambda.js'
 
 export type {
   Guards,
@@ -49,7 +49,7 @@ export type {
   MatcherW,
   MatchOr,
   MatchW,
-} from '../internal/shared'
+} from '../internal/shared.js'
 // Re-export shared types for single-import convenience
 export type {
   ApplyData0,
@@ -70,7 +70,7 @@ export type {
   TaggedLambda2,
   TaggedLambda3,
   TaggedLambda4,
-} from '../Lambda'
+} from '../Lambda.js'
 
 // ---------------------------------------------------------------------------
 // MemberSpec

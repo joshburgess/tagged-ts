@@ -21,8 +21,8 @@ import type {
   TaggedLambda2,
   TaggedLambda3,
   TaggedLambda4,
-} from '../Lambda'
-import type { SelectUnionMember } from './Utils'
+} from '../Lambda.js'
+import type { SelectUnionMember } from './Utils.js'
 
 // ---------------------------------------------------------------------------
 // Shared internal types
