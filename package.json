@@ -1,34 +1,38 @@
 {
   "name": "tagged-ts",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "description": "A tagged unions code generation library for discriminating tastes",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "files": [
-    "lib",
-    "es6"
+    "dist"
   ],
-  "main": "lib/index.js",
-  "module": "es6/index.js",
-  "typings": "lib/index.d.ts",
   "sideEffects": false,
   "scripts": {
-    "lint": "tslint src/**/*.ts test/**/*.ts",
-    "prettier": "prettier --list-different \"{src,test}/**/*.ts\"",
-    "prettier-fmt": "prettier --write \"{src,test}/**/*.ts\"",
-    "safety-check": "yarn prettier && yarn lint && yarn test",
-    "jest": "jest --ci --passWithNoTests",
-    "test": "yarn prettier && yarn lint && yarn jest && yarn docs",
-    "test-via-mocha": "TS_NODE_CACHE=false mocha -r ts-node/register test/*.ts",
-    "clean": "rm -rf lib/* es6/*",
-    "build": "yarn clean && tsc -p ./tsconfig.build.json && tsc -p ./tsconfig.build-es6.json && yarn docs",
-    "make-tsc-files": "node make-build-tsc-files.js",
-    "type-check-tsc-files": "tsc --noEmit --strict lib-tsc.ts es6-tsc.ts",
-    "clean-tsc-files": "rm lib-tsc.ts es6-tsc.ts",
-    "type-check-build": "yarn make-tsc-files && yarn type-check-tsc-files && yarn clean-tsc-files",
-    "postbuild": "prettier --write \"./{lib,es6}/**/*.ts\"",
-    "prepublish": "(not-in-publish && echo 'Skipping prepublish (deprecated)') || npm run require-npm4-to-publish",
-    "require-npm4-to-publish": "semver -r '>=4.0.0' $(npm --version) || (echo 'NPM 4+ required to publish' && exit 1)",
-    "prepublishOnly": "yarn safety-check && yarn build && yarn type-check-build",
-    "docs": "docs-ts"
+    "clean": "rm -rf dist",
+    "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "prepublishOnly": "npm run check && npm run build"
   },
   "repository": {
     "type": "git",
@@ -40,23 +44,16 @@
     "url": "https://github.com/joshburgess/tagged-ts/issues"
   },
   "homepage": "https://github.com/joshburgess/tagged-ts",
-  "dependencies": {},
   "devDependencies": {
-    "@types/mocha": "^7.0.2",
-    "@types/node": "^14.0.5",
-    "docs-ts": "^0.4.0",
-    "fs": "^0.0.1-security",
-    "in-publish": "^2.0.1",
-    "jest": "^26.0.1",
-    "mocha": "^7.2.0",
-    "prettier": "^2.0.5",
-    "semver": "^7.3.2",
-    "ts-jest": "^26.0.0",
-    "ts-node": "^8.10.1",
-    "tslint": "^6.1.2",
-    "tslint-config-standard": "^9.0.0",
-    "tslint-immutable": "^6.0.1",
-    "typescript": "^3.9.5"
+    "@biomejs/biome": "^2.4.11",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@swc/core": "^1.15.24",
+    "@types/node": "^20.19.39",
+    "fast-check": "^4.6.0",
+    "rollup": "^4.60.1",
+    "rollup-plugin-swc3": "^0.12.1",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
   },
   "keywords": [
     "union",

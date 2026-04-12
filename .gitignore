@@ -1,15 +1,8 @@
-DS_Store
+.DS_Store
 *.log
 node_modules
+dist
 lib
-lib-jsnext
 es6
-dev
 coverage
 .idea
-docs-examples
-es6-tsc.js
-es6-tsc.ts
-lib-tsc.js
-lib-tsc.ts
-make-build-tsc-files.js

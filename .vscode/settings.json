@@ -1,8 +1,5 @@
 {
-    "typescript.tsdk": "./node_modules/typescript/lib",
-    "prettier.printWidth": 80,
-    "prettier.semi": false,
-    "prettier.singleQuote": true,
-    "prettier.trailingComma": "all",
-    "prettier.arrowParens": "avoid"
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true
 }

@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
-    "noEmit": true,
-    "outDir": "./lib",
-    "target": "es5",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": ["es6", "dom"],
-    "sourceMap": false,
-    "declaration": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
     "strict": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": false,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "declaration": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "erasableSyntaxOnly": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "include": ["./src", "./test"]
+  "include": ["src", "test"]
 }
