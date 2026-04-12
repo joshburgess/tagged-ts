@@ -65,8 +65,8 @@ type MemberShape<F extends TaggedLambda0, K extends DataKeys<F>> = F['data'][K &
  *
  * @example
  * ```ts
- * // Just has `value`, Nothing has no extra fields
- * mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
+ * // Just<A> has `value` (true), Nothing has no extra fields (false)
+ * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
  * ```
  *
  * @since 0.4.0
@@ -672,6 +672,10 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
  *
  * @example
  * ```ts
+ * type Nothing = { readonly tag: 'Nothing' }
+ * type Just<A> = { readonly tag: 'Just'; readonly value: A }
+ * type Maybe<A> = Just<A> | Nothing
+ *
  * interface MaybeLambda extends TaggedLambda1 {
  *   readonly type: Maybe<this['A']>
  *   readonly data: MkData<this['type']>
@@ -679,8 +683,8 @@ const mkTaggedUnionImpl = <F extends TaggedLambda0, DK extends string>(
  *
  * const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
  *
- * Maybe.Just({ value: 42 })  // function constructor
- * Maybe.Nothing               // constant value
+ * Maybe.Just({ value: 42 })  // Maybe<number>
+ * Maybe.Nothing               // Maybe<never>
  * ```
  *
  * @since 0.4.0
@@ -703,6 +707,11 @@ export const mkTaggedUnion = <F extends TaggedLambda0>(
  *
  * @example
  * ```ts
+ * type First<A> = { readonly kind: 'First'; readonly value: A }
+ * type Second<A> = { readonly kind: 'Second'; readonly value: A }
+ * type Third = { readonly kind: 'Third' }
+ * type Trio<A> = First<A> | Second<A> | Third
+ *
  * interface TrioLambda extends TaggedLambda1 {
  *   readonly type: Trio<this['A']>
  *   readonly data: MkData<this['type'], 'kind'>
