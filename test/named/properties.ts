@@ -6,8 +6,8 @@ import type {
   TaggedLambda1,
   TaggedLambda2,
   TaggedLambda3,
-} from '../src'
-import { mkTaggedUnion, mkTaggedUnionCustom } from '../src'
+} from '../../src/named'
+import { mkTaggedUnion, mkTaggedUnionCustom } from '../../src/named'
 
 // ---------------------------------------------------------------------------
 // Setup: Maybe<A> (arity 1, discriminant 'tag')
@@ -22,7 +22,7 @@ interface MaybeLambda extends TaggedLambda1 {
   readonly data: MkData<this['type']>
 }
 
-const Maybe = mkTaggedUnion<MaybeLambda>()({ Just: ['value'], Nothing: [] })
+const Maybe = mkTaggedUnion<MaybeLambda>({ Just: true, Nothing: false })
 
 // ---------------------------------------------------------------------------
 // Setup: Result<E, A> (arity 2, discriminant 'tag')
@@ -37,9 +37,9 @@ interface ResultLambda extends TaggedLambda2 {
   readonly data: MkData<this['type']>
 }
 
-const Result = mkTaggedUnion<ResultLambda>()({
-  Success: ['value'],
-  Failure: ['error'],
+const Result = mkTaggedUnion<ResultLambda>({
+  Success: true,
+  Failure: true,
 })
 
 // ---------------------------------------------------------------------------
@@ -56,8 +56,8 @@ interface CounterActionLambda extends TaggedLambda0 {
 }
 
 const CounterAction = mkTaggedUnionCustom<CounterActionLambda>()('type', {
-  Increment: ['amount'],
-  Reset: [],
+  Increment: true,
+  Reset: false,
 })
 
 // ---------------------------------------------------------------------------
@@ -75,9 +75,9 @@ interface TrioLambda extends TaggedLambda1 {
 }
 
 const Trio = mkTaggedUnionCustom<TrioLambda>()('kind', {
-  First: ['value'],
-  Second: ['value'],
-  Third: [],
+  First: true,
+  Second: true,
+  Third: false,
 })
 
 // ---------------------------------------------------------------------------
@@ -95,11 +95,11 @@ interface EnvLambda extends TaggedLambda3 {
   readonly data: MkData<this['type']>
 }
 
-const Env = mkTaggedUnion<EnvLambda>()({
-  Ask: ['resource'],
-  Pure: ['value'],
-  Raise: ['error'],
-  Halt: [],
+const Env = mkTaggedUnion<EnvLambda>({
+  Ask: true,
+  Pure: true,
+  Raise: true,
+  Halt: false,
 })
 
 // ===========================================================================
@@ -109,34 +109,40 @@ const Env = mkTaggedUnion<EnvLambda>()({
 const arbJsonValue = fc.jsonValue({ maxDepth: 3 })
 
 const arbMaybe: fc.Arbitrary<Maybe<fc.JsonValue>> = fc.oneof(
-  arbJsonValue.map(v => Maybe.Just(v)),
+  arbJsonValue.map(v => Maybe.Just({ value: v })),
   fc.constant(Maybe.Nothing as Maybe<fc.JsonValue>),
 )
 
 const arbResult: fc.Arbitrary<Result<fc.JsonValue, fc.JsonValue>> = fc.oneof(
-  arbJsonValue.map(v => Result.Success<fc.JsonValue, fc.JsonValue>(v)),
-  arbJsonValue.map(e => Result.Failure<fc.JsonValue, fc.JsonValue>(e)),
+  arbJsonValue.map(v =>
+    Result.Success<fc.JsonValue, fc.JsonValue>({ value: v }),
+  ),
+  arbJsonValue.map(e =>
+    Result.Failure<fc.JsonValue, fc.JsonValue>({ error: e }),
+  ),
 )
 
 const arbCounterAction: fc.Arbitrary<CounterAction> = fc.oneof(
-  fc.integer().map(n => CounterAction.Increment(n)),
+  fc.integer().map(n => CounterAction.Increment({ amount: n })),
   fc.constant(CounterAction.Reset),
 )
 
 const arbTrio: fc.Arbitrary<Trio<fc.JsonValue>> = fc.oneof(
-  arbJsonValue.map(v => Trio.First(v)),
-  arbJsonValue.map(v => Trio.Second(v)),
+  arbJsonValue.map(v => Trio.First({ value: v })),
+  arbJsonValue.map(v => Trio.Second({ value: v })),
   fc.constant(Trio.Third as Trio<fc.JsonValue>),
 )
 
 const arbEnv: fc.Arbitrary<Env<fc.JsonValue, fc.JsonValue, fc.JsonValue>> =
   fc.oneof(
-    arbJsonValue.map(r => Env.Ask<fc.JsonValue, fc.JsonValue, fc.JsonValue>(r)),
+    arbJsonValue.map(r =>
+      Env.Ask<fc.JsonValue, fc.JsonValue, fc.JsonValue>({ resource: r }),
+    ),
     arbJsonValue.map(v =>
-      Env.Pure<fc.JsonValue, fc.JsonValue, fc.JsonValue>(v),
+      Env.Pure<fc.JsonValue, fc.JsonValue, fc.JsonValue>({ value: v }),
     ),
     arbJsonValue.map(e =>
-      Env.Raise<fc.JsonValue, fc.JsonValue, fc.JsonValue>(e),
+      Env.Raise<fc.JsonValue, fc.JsonValue, fc.JsonValue>({ error: e }),
     ),
     fc.constant(Env.Halt as Env<fc.JsonValue, fc.JsonValue, fc.JsonValue>),
   )
@@ -149,7 +155,7 @@ describe('constructor -> guard roundtrip', () => {
   it('Maybe: is.Just(Just(x)) === true for any x', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Maybe.is.Just(Maybe.Just(v))).toBe(true)
+        expect(Maybe.is.Just(Maybe.Just({ value: v }))).toBe(true)
       }),
     )
   })
@@ -161,7 +167,7 @@ describe('constructor -> guard roundtrip', () => {
   it('Result: is.Success(Success(x)) === true for any x', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Result.is.Success(Result.Success(v))).toBe(true)
+        expect(Result.is.Success(Result.Success({ value: v }))).toBe(true)
       }),
     )
   })
@@ -169,7 +175,7 @@ describe('constructor -> guard roundtrip', () => {
   it('Result: is.Failure(Failure(x)) === true for any x', () => {
     fc.assert(
       fc.property(arbJsonValue, e => {
-        expect(Result.is.Failure(Result.Failure(e))).toBe(true)
+        expect(Result.is.Failure(Result.Failure({ error: e }))).toBe(true)
       }),
     )
   })
@@ -177,9 +183,9 @@ describe('constructor -> guard roundtrip', () => {
   it('CounterAction: is.Increment(Increment(n)) === true for any n', () => {
     fc.assert(
       fc.property(fc.integer(), n => {
-        expect(CounterAction.is.Increment(CounterAction.Increment(n))).toBe(
-          true,
-        )
+        expect(
+          CounterAction.is.Increment(CounterAction.Increment({ amount: n })),
+        ).toBe(true)
       }),
     )
   })
@@ -191,8 +197,8 @@ describe('constructor -> guard roundtrip', () => {
   it('Trio: each variant passes its own guard', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Trio.is.First(Trio.First(v))).toBe(true)
-        expect(Trio.is.Second(Trio.Second(v))).toBe(true)
+        expect(Trio.is.First(Trio.First({ value: v }))).toBe(true)
+        expect(Trio.is.Second(Trio.Second({ value: v }))).toBe(true)
       }),
     )
     expect(Trio.is.Third(Trio.Third)).toBe(true)
@@ -201,9 +207,9 @@ describe('constructor -> guard roundtrip', () => {
   it('Env: each variant passes its own guard', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Env.is.Ask(Env.Ask(v))).toBe(true)
-        expect(Env.is.Pure(Env.Pure(v))).toBe(true)
-        expect(Env.is.Raise(Env.Raise(v))).toBe(true)
+        expect(Env.is.Ask(Env.Ask({ resource: v }))).toBe(true)
+        expect(Env.is.Pure(Env.Pure({ value: v }))).toBe(true)
+        expect(Env.is.Raise(Env.Raise({ error: v }))).toBe(true)
       }),
     )
     expect(Env.is.Halt(Env.Halt)).toBe(true)
@@ -682,7 +688,7 @@ describe('constructor preserves all fields', () => {
   it('Maybe.Just preserves value field', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        const just = Maybe.Just(v)
+        const just = Maybe.Just({ value: v })
         expect(just).toEqual({ tag: 'Just', value: v })
       }),
     )
@@ -696,7 +702,7 @@ describe('constructor preserves all fields', () => {
   it('Result.Success preserves value field', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Result.Success(v)).toEqual({
+        expect(Result.Success({ value: v })).toEqual({
           tag: 'Success',
           value: v,
         })
@@ -707,7 +713,7 @@ describe('constructor preserves all fields', () => {
   it('Result.Failure preserves error field', () => {
     fc.assert(
       fc.property(arbJsonValue, e => {
-        expect(Result.Failure(e)).toEqual({
+        expect(Result.Failure({ error: e })).toEqual({
           tag: 'Failure',
           error: e,
         })
@@ -718,7 +724,7 @@ describe('constructor preserves all fields', () => {
   it('CounterAction.Increment preserves amount field', () => {
     fc.assert(
       fc.property(fc.integer(), n => {
-        expect(CounterAction.Increment(n)).toEqual({
+        expect(CounterAction.Increment({ amount: n })).toEqual({
           type: 'Increment',
           amount: n,
         })
@@ -733,8 +739,8 @@ describe('constructor preserves all fields', () => {
   it('Trio constructors preserve fields with custom discriminant key', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Trio.First(v)).toEqual({ kind: 'First', value: v })
-        expect(Trio.Second(v)).toEqual({ kind: 'Second', value: v })
+        expect(Trio.First({ value: v })).toEqual({ kind: 'First', value: v })
+        expect(Trio.Second({ value: v })).toEqual({ kind: 'Second', value: v })
       }),
     )
     expect(Trio.Third).toEqual({ kind: 'Third' })
@@ -743,9 +749,9 @@ describe('constructor preserves all fields', () => {
   it('Env constructors preserve fields at arity 3', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        expect(Env.Ask(v)).toEqual({ tag: 'Ask', resource: v })
-        expect(Env.Pure(v)).toEqual({ tag: 'Pure', value: v })
-        expect(Env.Raise(v)).toEqual({ tag: 'Raise', error: v })
+        expect(Env.Ask({ resource: v })).toEqual({ tag: 'Ask', resource: v })
+        expect(Env.Pure({ value: v })).toEqual({ tag: 'Pure', value: v })
+        expect(Env.Raise({ error: v })).toEqual({ tag: 'Raise', error: v })
       }),
     )
     expect(Env.Halt).toEqual({ tag: 'Halt' })
@@ -760,7 +766,7 @@ describe('constructor -> match -> field extraction roundtrip', () => {
   it('Maybe: extracting value from Just via match returns the original', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
-        const extracted = Maybe.match(Maybe.Just(v), {
+        const extracted = Maybe.match(Maybe.Just({ value: v }), {
           Just: x => x.value,
           Nothing: _x => undefined,
         })
@@ -773,7 +779,7 @@ describe('constructor -> match -> field extraction roundtrip', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
         const extractedValue = Result.match(
-          Result.Success<unknown, fc.JsonValue>(v),
+          Result.Success<unknown, fc.JsonValue>({ value: v }),
           {
             Success: x => x.value,
             Failure: _x => undefined,
@@ -782,7 +788,7 @@ describe('constructor -> match -> field extraction roundtrip', () => {
         expect(extractedValue).toEqual(v)
 
         const extractedError = Result.match(
-          Result.Failure<fc.JsonValue, unknown>(v),
+          Result.Failure<fc.JsonValue, unknown>({ error: v }),
           {
             Success: _x => undefined,
             Failure: x => x.error,
@@ -797,7 +803,7 @@ describe('constructor -> match -> field extraction roundtrip', () => {
     fc.assert(
       fc.property(arbJsonValue, v => {
         const extracted = Env.match(
-          Env.Ask<fc.JsonValue, unknown, unknown>(v),
+          Env.Ask<fc.JsonValue, unknown, unknown>({ resource: v }),
           {
             Ask: x => x.resource,
             Pure: _x => undefined,

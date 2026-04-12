@@ -4,8 +4,8 @@ import type {
   TaggedLambda1,
   TaggedLambda2,
   TaggedLambda3,
-} from '../src'
-import { mkTaggedUnion } from '../src'
+} from '../../src/positional'
+import { mkTaggedUnion } from '../../src/positional'
 
 // ===========================================================================
 // Setup: Maybe<A> (arity 1, nullary + non-nullary)

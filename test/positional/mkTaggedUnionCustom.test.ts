@@ -4,8 +4,8 @@ import type {
   TaggedLambda0,
   TaggedLambda1,
   TaggedLambda4,
-} from '../src'
-import { mkTaggedUnionCustom } from '../src'
+} from '../../src/positional'
+import { mkTaggedUnionCustom } from '../../src/positional'
 
 // ===========================================================================
 // Setup: Perhaps<A> (arity 1, custom discriminant '__Kind')

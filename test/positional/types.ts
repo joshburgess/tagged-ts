@@ -13,6 +13,13 @@
  */
 
 import type {
+  IsLambda0,
+  IsLambda1,
+  IsLambda2,
+  IsLambda3,
+  IsLambda4,
+} from '../../src/Lambda'
+import type {
   Constructors,
   MemberSpec,
   MkData,
@@ -22,15 +29,8 @@ import type {
   TaggedLambda3,
   TaggedLambda4,
   TaggedUnion,
-} from '../src'
-import { mkTaggedUnion, mkTaggedUnionCustom } from '../src'
-import type {
-  IsLambda0,
-  IsLambda1,
-  IsLambda2,
-  IsLambda3,
-  IsLambda4,
-} from '../src/Lambda'
+} from '../../src/positional'
+import { mkTaggedUnion, mkTaggedUnionCustom } from '../../src/positional'
 
 // ---------------------------------------------------------------------------
 // Utility: type-level assertion helpers
