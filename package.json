@@ -55,7 +55,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "rm -rf dist && rollup -c rollup.config.mjs && tsc -p tsconfig.build.json && cp dist/index.d.ts dist/index.d.cts && cp dist/named/index.d.ts dist/named/index.d.cts && cp dist/positional/index.d.ts dist/positional/index.d.cts && cp dist/fast-check/index.d.ts dist/fast-check/index.d.cts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p examples/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:types": "vitest --run --typecheck.only",
@@ -83,6 +83,7 @@
     "fast-check": "^4.6.0",
     "rollup": "^4.60.1",
     "rollup-plugin-swc3": "^0.12.1",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
   },
