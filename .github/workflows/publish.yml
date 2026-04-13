@@ -19,8 +19,6 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
-          always-auth: true
 
       - name: Verify tag matches package.json version
         run: |
@@ -36,6 +34,18 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+
+      - name: Configure npm auth
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN}" ]; then
+            echo "::error::NPM_TOKEN secret is empty"
+            exit 1
+          fi
+          echo "NODE_AUTH_TOKEN length: ${#NODE_AUTH_TOKEN}"
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish to npm
         run: npm publish --provenance --access public
