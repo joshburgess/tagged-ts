@@ -20,6 +20,7 @@ jobs:
           node-version: 22
           cache: npm
           registry-url: 'https://registry.npmjs.org'
+          always-auth: true
 
       - name: Verify tag matches package.json version
         run: |
