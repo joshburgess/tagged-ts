@@ -62,7 +62,7 @@
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
-    "check": "npm run typecheck && npm run lint && npm run test",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run test:types",
     "prepublishOnly": "npm run check && npm run build"
   },
   "repository": {
